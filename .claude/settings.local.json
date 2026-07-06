@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__96853c06-0aa9-4d8c-9c7e-c5579636b2c0__list_projects",
+      "mcp__96853c06-0aa9-4d8c-9c7e-c5579636b2c0__list_tables",
+      "mcp__96853c06-0aa9-4d8c-9c7e-c5579636b2c0__get_project_url",
+      "mcp__96853c06-0aa9-4d8c-9c7e-c5579636b2c0__get_publishable_keys",
+      "mcp__96853c06-0aa9-4d8c-9c7e-c5579636b2c0__apply_migration",
+      "PowerShell(npm install --silent 2>&1)",
+      "PowerShell(if \\(Test-Path node_modules\\) { \"node_modules ok - $\\(\\(Get-ChildItem node_modules | Measure-Object\\).Count\\) packages\" } else { \"MISSING node_modules\" })",
+      "PowerShell(npx tsc -b --noEmit 2>&1)"
+    ]
+  }
+}
