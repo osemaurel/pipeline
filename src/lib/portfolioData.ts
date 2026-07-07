@@ -10,8 +10,23 @@ export interface Portfolio {
   whatsapp_number: string | null
   theme: string
   view_count: number
+  is_available: boolean
+  cv_url: string | null
+  tools: string[]
   created_at: string
   updated_at: string
+}
+
+export interface PortfolioExperience {
+  id: string
+  user_id: string
+  role: string
+  company: string
+  start_year: string
+  end_year: string | null
+  description: string | null
+  order_index: number
+  created_at: string
 }
 
 export interface PortfolioService {
@@ -52,6 +67,7 @@ export interface PortfolioBundle {
   services: PortfolioService[]
   projects: PortfolioProject[]
   testimonials: PortfolioTestimonial[]
+  experiences: PortfolioExperience[]
 }
 
 const slugify = (input: string) =>
@@ -78,7 +94,7 @@ export async function isSlugAvailable(slug: string, currentUserId: string) {
 }
 
 export async function fetchPortfolioBundle(userId: string): Promise<PortfolioBundle> {
-  const [pRes, sRes, jRes, tRes] = await Promise.all([
+  const [pRes, sRes, jRes, tRes, eRes] = await Promise.all([
     supabase.from('portfolios').select('*').eq('user_id', userId).maybeSingle(),
     supabase
       .from('portfolio_services')
@@ -95,12 +111,18 @@ export async function fetchPortfolioBundle(userId: string): Promise<PortfolioBun
       .select('*')
       .eq('user_id', userId)
       .order('order_index'),
+    supabase
+      .from('portfolio_experiences')
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_index'),
   ])
   return {
     portfolio: (pRes.data as Portfolio | null) ?? null,
     services: (sRes.data as PortfolioService[]) ?? [],
     projects: (jRes.data as PortfolioProject[]) ?? [],
     testimonials: (tRes.data as PortfolioTestimonial[]) ?? [],
+    experiences: (eRes.data as PortfolioExperience[]) ?? [],
   }
 }
 
@@ -130,7 +152,7 @@ export async function fetchPublicPortfolio(slug: string): Promise<PortfolioBundl
   if (!portfolio) return null
 
   const userId = (portfolio as Portfolio).user_id
-  const [sRes, jRes, tRes] = await Promise.all([
+  const [sRes, jRes, tRes, eRes] = await Promise.all([
     supabase
       .from('portfolio_services')
       .select('*')
@@ -146,6 +168,11 @@ export async function fetchPublicPortfolio(slug: string): Promise<PortfolioBundl
       .select('*')
       .eq('user_id', userId)
       .order('order_index'),
+    supabase
+      .from('portfolio_experiences')
+      .select('*')
+      .eq('user_id', userId)
+      .order('order_index'),
   ])
 
   return {
@@ -153,7 +180,48 @@ export async function fetchPublicPortfolio(slug: string): Promise<PortfolioBundl
     services: (sRes.data as PortfolioService[]) ?? [],
     projects: (jRes.data as PortfolioProject[]) ?? [],
     testimonials: (tRes.data as PortfolioTestimonial[]) ?? [],
+    experiences: (eRes.data as PortfolioExperience[]) ?? [],
   }
+}
+
+// ----------------------------------------------------------------------------
+// Expériences
+// ----------------------------------------------------------------------------
+
+export async function saveExperience(
+  input: Partial<PortfolioExperience> & {
+    user_id: string
+    role: string
+    company: string
+    start_year: string
+  },
+) {
+  if (input.id) {
+    const { id, ...patch } = input
+    const { data, error } = await supabase
+      .from('portfolio_experiences')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single()
+    return {
+      data: (data as PortfolioExperience | null) ?? null,
+      error: error?.message ?? null,
+    }
+  }
+  const { data, error } = await supabase
+    .from('portfolio_experiences')
+    .insert(input)
+    .select()
+    .single()
+  return {
+    data: (data as PortfolioExperience | null) ?? null,
+    error: error?.message ?? null,
+  }
+}
+
+export async function deleteExperience(id: string) {
+  await supabase.from('portfolio_experiences').delete().eq('id', id)
 }
 
 export async function incrementPortfolioView(slug: string) {
@@ -171,13 +239,12 @@ export async function submitLead(input: {
   return { error: error?.message ?? null }
 }
 
-export async function fetchOwnerProfileForPortfolio(userId: string) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('first_name, last_name, job_title, company_name')
-    .eq('user_id', userId)
-    .maybeSingle()
-  return data as {
+export async function fetchOwnerProfileForPortfolio(slug: string) {
+  // RPC security definer : lisible sans être connecté, n'expose que les
+  // champs publics et seulement si le portfolio est publié.
+  const { data } = await supabase.rpc('get_portfolio_owner', { p_slug: slug })
+  const row = Array.isArray(data) ? data[0] : data
+  return (row ?? null) as {
     first_name: string
     last_name: string
     job_title: string | null

@@ -43,8 +43,10 @@ export function PublicLeadForm({ userId, ownerFirstName }: Props) {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success-500/10 text-success-600">
           <Check size={24} />
         </div>
-        <h3 className="text-lg font-semibold text-ink-900">Message envoyé</h3>
-        <p className="text-sm text-ink-600">
+        <h3 className="text-lg font-semibold text-ink-900 dark:text-white">
+          Message envoyé
+        </h3>
+        <p className="text-sm text-ink-600 dark:text-ink-300">
           {ownerFirstName ? `${ownerFirstName} te` : 'On te'} recontactera très
           bientôt.
         </p>
@@ -55,10 +57,12 @@ export function PublicLeadForm({ userId, ownerFirstName }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="rounded-lg border border-ink-100 bg-cream-50 p-6"
+      className="rounded-lg border border-ink-100 bg-cream-50 p-6 dark:border-transparent dark:bg-transparent"
     >
-      <h3 className="text-lg font-semibold text-ink-900">Demander un devis</h3>
-      <p className="mt-1 text-sm text-ink-500">
+      <h3 className="text-lg font-semibold text-ink-900 dark:text-white">
+        Demander un devis
+      </h3>
+      <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
         Décris ton projet en quelques mots — réponse rapide.
       </p>
 

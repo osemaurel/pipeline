@@ -13,6 +13,8 @@ import { HeaderSection } from '@/components/portfolio/HeaderSection'
 import { ServicesSection } from '@/components/portfolio/ServicesSection'
 import { ProjectsSection } from '@/components/portfolio/ProjectsSection'
 import { TestimonialsSection } from '@/components/portfolio/TestimonialsSection'
+import { ToolsSection } from '@/components/portfolio/ToolsSection'
+import { ExperiencesSection } from '@/components/portfolio/ExperiencesSection'
 import { QRCodeCard } from '@/components/portfolio/QRCodeCard'
 
 export function PortfolioPage() {
@@ -265,18 +267,29 @@ export function PortfolioPage() {
             portfolio={portfolio}
             onChange={(patch) => patchPortfolio(patch)}
           />
-          <ServicesSection
-            userId={user.id}
-            services={bundle!.services}
-            onChange={(services) =>
-              setBundle((b) => (b ? { ...b, services } : b))
-            }
+          <ToolsSection
+            selected={portfolio.tools ?? []}
+            onChange={(tools) => patchPortfolio({ tools })}
           />
           <ProjectsSection
             userId={user.id}
             projects={bundle!.projects}
             onChange={(projects) =>
               setBundle((b) => (b ? { ...b, projects } : b))
+            }
+          />
+          <ExperiencesSection
+            userId={user.id}
+            experiences={bundle!.experiences}
+            onChange={(experiences) =>
+              setBundle((b) => (b ? { ...b, experiences } : b))
+            }
+          />
+          <ServicesSection
+            userId={user.id}
+            services={bundle!.services}
+            onChange={(services) =>
+              setBundle((b) => (b ? { ...b, services } : b))
             }
           />
           <TestimonialsSection
