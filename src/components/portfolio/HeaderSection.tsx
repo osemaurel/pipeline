@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { FileText, User } from 'lucide-react'
 import type { Portfolio } from '@/lib/portfolioData'
 import { SectionCard } from './SectionCard'
+import { PhotoUploader } from './PhotoUploader'
 
 interface Props {
+  userId: string
   portfolio: Partial<Portfolio>
   onChange: (patch: Partial<Portfolio>) => void
 }
 
-export function HeaderSection({ portfolio, onChange }: Props) {
+export function HeaderSection({ userId, portfolio, onChange }: Props) {
   const [local, setLocal] = useState({
     headline: portfolio.headline ?? '',
     bio: portfolio.bio ?? '',
-    photo_url: portfolio.photo_url ?? '',
     whatsapp_number: portfolio.whatsapp_number ?? '',
     cv_url: portfolio.cv_url ?? '',
   })
@@ -22,7 +23,6 @@ export function HeaderSection({ portfolio, onChange }: Props) {
     onChange({
       headline: local.headline || null,
       bio: local.bio || null,
-      photo_url: local.photo_url || null,
       whatsapp_number: local.whatsapp_number || null,
       cv_url: local.cv_url || null,
     })
@@ -64,32 +64,13 @@ export function HeaderSection({ portfolio, onChange }: Props) {
         />
       </label>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[auto_1fr]">
-        <div className="flex flex-col items-center gap-2">
-          {local.photo_url ? (
-            <img
-              src={local.photo_url}
-              alt=""
-              className="h-24 w-24 rounded-full border-2 border-cream-200 object-cover"
-            />
-          ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-cream-200 text-ink-300">
-              <User size={30} />
-            </div>
-          )}
-          <p className="text-xs text-ink-400">Photo</p>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label className="label">URL de la photo</label>
-            <input
-              className="input"
-              value={local.photo_url}
-              onChange={(e) => setLocal({ ...local, photo_url: e.target.value })}
-              onBlur={commit}
-              placeholder="https://..."
-            />
-          </div>
+      <PhotoUploader
+        userId={userId}
+        currentUrl={portfolio.photo_url ?? null}
+        onChange={(nextUrl) => onChange({ photo_url: nextUrl })}
+      />
+
+      <div className="mt-4 space-y-3">
           <div>
             <label className="label">Accroche</label>
             <input
@@ -144,7 +125,6 @@ export function HeaderSection({ portfolio, onChange }: Props) {
             Le bouton « Télécharger mon CV » n'apparaît que si un lien est
             renseigné.
           </p>
-        </div>
       </div>
     </SectionCard>
   )

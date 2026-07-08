@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import type { PortfolioService } from '@/lib/portfolioData'
 import { SectionCard } from './SectionCard'
 import { ItemEditor } from './ItemEditor'
+import { ImageUploader } from './ImageUploader'
+import { deletePortfolioAsset } from '@/lib/storageUpload'
 
 interface Draft {
   id?: string
@@ -76,7 +78,11 @@ export function ServicesSection({ userId, services, onChange }: Props) {
 
   const remove = async () => {
     if (!editing?.id) return
+    const target = services.find((s) => s.id === editing.id)
     setSaving(true)
+    if (target?.image_url) {
+      deletePortfolioAsset(target.image_url).catch(() => {})
+    }
     await supabase.from('portfolio_services').delete().eq('id', editing.id)
     onChange(services.filter((s) => s.id !== editing.id))
     setSaving(false)
@@ -170,32 +176,29 @@ export function ServicesSection({ userId, services, onChange }: Props) {
                 placeholder="Que comprend cette offre ? Livrables, délais…"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Prix (FCFA)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input"
-                  value={editing.price}
-                  onChange={(e) =>
-                    setEditing({ ...editing, price: e.target.value })
-                  }
-                  placeholder="Ex : 250000"
-                />
-              </div>
-              <div>
-                <label className="label">Image (URL)</label>
-                <input
-                  className="input"
-                  value={editing.image_url}
-                  onChange={(e) =>
-                    setEditing({ ...editing, image_url: e.target.value })
-                  }
-                  placeholder="https://..."
-                />
-              </div>
+            <div>
+              <label className="label">Prix (FCFA)</label>
+              <input
+                type="number"
+                min="0"
+                className="input"
+                value={editing.price}
+                onChange={(e) =>
+                  setEditing({ ...editing, price: e.target.value })
+                }
+                placeholder="Ex : 250000"
+              />
             </div>
+            <ImageUploader
+              userId={userId}
+              folder="services"
+              currentUrl={editing.image_url || null}
+              onChange={(url) =>
+                setEditing({ ...editing, image_url: url ?? '' })
+              }
+              label="Image du service (optionnelle)"
+              aspectRatio="16 / 9"
+            />
           </ItemEditor>
         </div>
       )}

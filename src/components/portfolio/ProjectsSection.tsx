@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import type { PortfolioProject } from '@/lib/portfolioData'
 import { SectionCard } from './SectionCard'
 import { ItemEditor } from './ItemEditor'
+import { ImageUploader } from './ImageUploader'
+import { deletePortfolioAsset } from '@/lib/storageUpload'
 
 interface Draft {
   id?: string
@@ -77,7 +79,11 @@ export function ProjectsSection({ userId, projects, onChange }: Props) {
 
   const remove = async () => {
     if (!editing?.id) return
+    const target = projects.find((p) => p.id === editing.id)
     setSaving(true)
+    if (target?.image_url) {
+      deletePortfolioAsset(target.image_url).catch(() => {})
+    }
     await supabase.from('portfolio_projects').delete().eq('id', editing.id)
     onChange(projects.filter((p) => p.id !== editing.id))
     setSaving(false)
@@ -177,29 +183,27 @@ export function ProjectsSection({ userId, projects, onChange }: Props) {
                 placeholder="Le contexte, ton rôle, le résultat obtenu."
               />
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="label">Image (URL)</label>
-                <input
-                  className="input"
-                  value={editing.image_url}
-                  onChange={(e) =>
-                    setEditing({ ...editing, image_url: e.target.value })
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div>
-                <label className="label">Lien externe</label>
-                <input
-                  className="input"
-                  value={editing.external_link}
-                  onChange={(e) =>
-                    setEditing({ ...editing, external_link: e.target.value })
-                  }
-                  placeholder="https://..."
-                />
-              </div>
+            <ImageUploader
+              userId={userId}
+              folder="projects"
+              currentUrl={editing.image_url || null}
+              onChange={(url) =>
+                setEditing({ ...editing, image_url: url ?? '' })
+              }
+              label="Visuel du projet"
+              hint="Capture, mockup ou photo — max 5 Mo. Format paysage recommandé."
+              aspectRatio="16 / 9"
+            />
+            <div>
+              <label className="label">Lien externe</label>
+              <input
+                className="input"
+                value={editing.external_link}
+                onChange={(e) =>
+                  setEditing({ ...editing, external_link: e.target.value })
+                }
+                placeholder="https://..."
+              />
             </div>
           </ItemEditor>
         </div>

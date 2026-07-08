@@ -264,6 +264,7 @@ export function PortfolioPage() {
       {portfolio && user && (
         <>
           <HeaderSection
+            userId={user.id}
             portfolio={portfolio}
             onChange={(patch) => patchPortfolio(patch)}
           />
