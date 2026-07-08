@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  ArrowDown,
+  ArrowRight,
   ArrowUpRight,
   Download,
   MessageCircle,
@@ -28,6 +28,13 @@ interface OwnerProfile {
 }
 
 const THEME_KEY = 'pipeline_portfolio_theme'
+
+const NAV_LINKS = [
+  { href: '#outils', label: 'Outils' },
+  { href: '#projets', label: 'Projets' },
+  { href: '#experience', label: 'Expérience' },
+  { href: '#temoignages', label: 'Témoignages' },
+]
 
 export function PublicPortfolioPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -66,11 +73,9 @@ export function PublicPortfolioPage() {
 
   if (loading) {
     return (
-      <div className={dark ? 'dark' : ''}>
-        <div className="flex min-h-screen items-center justify-center bg-white dark:bg-ink-950">
-          <div className="animate-pulse text-xl font-semibold text-ink-400">
-            Pipeline
-          </div>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="animate-pulse text-xl font-semibold text-ink-400">
+          Pipeline
         </div>
       </div>
     )
@@ -97,120 +102,169 @@ export function PublicPortfolioPage() {
     )
   }
 
-  const { portfolio, projects, testimonials, experiences, services } = bundle
+  const { portfolio, projects, testimonials, experiences } = bundle
   const displayName = owner
     ? `${owner.first_name} ${owner.last_name}`
     : 'Freelance'
-  const heading =
-    owner?.job_title || portfolio.headline || displayName
   const whatsappLink = portfolio.whatsapp_number
     ? `https://wa.me/${portfolio.whatsapp_number.replace(/[^0-9]/g, '')}`
     : null
+  const tools = (portfolio.tools ?? []).filter(findTool)
+  const accent = portfolio.accent_color ?? '#7F56D9'
 
   return (
-    <div className={dark ? 'dark' : ''}>
-      <div className="min-h-screen bg-white text-ink-900 transition-colors dark:bg-ink-950 dark:text-white">
-        {/* Barre haute : logo discret + toggle thème */}
-        <div className="fixed inset-x-0 top-0 z-40 flex justify-center px-6 pt-4">
-          <div className="flex w-full max-w-2xl items-center justify-between rounded-full border border-ink-100 bg-white/80 px-4 py-2 shadow-xs backdrop-blur dark:border-ink-800 dark:bg-ink-900/80">
-            <span className="text-sm font-bold tracking-tight">
-              {displayName}
-            </span>
-            <button
-              onClick={toggleTheme}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-cream-200 dark:text-ink-300 dark:hover:bg-ink-800"
-              title={dark ? 'Mode clair' : 'Mode sombre'}
-            >
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-          </div>
-        </div>
-
-        <div className="mx-auto max-w-2xl px-6 pb-20 pt-28">
-          {/* ------------------------------------------------ Hero */}
-          <header className="flex flex-col items-start gap-6">
-            {portfolio.is_available && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-success-200 bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:border-success-700/40 dark:bg-success-700/10 dark:text-success-500">
-                <span className="h-2 w-2 animate-pulse-dot rounded-full bg-success-500" />
-                Disponible pour de nouveaux projets
+    <div
+      className={`portfolio-accent ${dark ? 'dark' : ''}`}
+      style={{ ['--accent' as string]: accent }}
+    >
+      <div className="min-h-screen scroll-smooth bg-white text-ink-900 transition-colors dark:bg-[#0A0D12] dark:text-white">
+        {/* ------------------------------------------------ Navbar */}
+        <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur-md dark:border-ink-800 dark:bg-[#0A0D12]/80">
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
+            <a href="#top" className="flex min-w-0 items-center gap-2.5">
+              {portfolio.photo_url ? (
+                <img
+                  src={portfolio.photo_url}
+                  alt=""
+                  className="h-9 w-9 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cream-200 text-ink-400 dark:bg-ink-800">
+                  <User size={16} />
+                </span>
+              )}
+              <span className="truncate text-sm font-semibold">
+                {displayName}
               </span>
-            )}
+            </a>
 
-            {portfolio.photo_url ? (
-              <img
-                src={portfolio.photo_url}
-                alt={displayName}
-                className="h-24 w-24 rounded-2xl object-cover shadow-md"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-cream-200 text-ink-300 dark:bg-ink-800">
-                <User size={36} />
-              </div>
-            )}
+            <nav className="hidden items-center gap-6 md:flex">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="text-sm font-medium text-ink-600 transition hover:text-ink-900 dark:text-ink-300 dark:hover:text-white"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </nav>
 
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-200 text-ink-500 transition hover:bg-cream-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
+                title={dark ? 'Mode clair' : 'Mode sombre'}
+              >
+                {dark ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+              <a
+                href="#contact"
+                className="hidden items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:brightness-90 sm:inline-flex"
+                style={{ backgroundColor: 'var(--accent)' }}
+              >
+                Me contacter
+                <ArrowRight size={14} />
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <main id="top" className="mx-auto max-w-6xl px-5">
+          {/* ------------------------------------------------ Hero */}
+          <section className="grid grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:py-20">
             <div>
-              <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-                {heading}
-                <span className="text-accent-500">.</span>
+              {portfolio.is_available && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-ink-100 bg-cream-100 px-4 py-2 text-sm text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-300">
+                  <span className="h-2 w-2 animate-pulse-dot rounded-full bg-success-500" />
+                  Disponible pour de nouveaux projets
+                </span>
+              )}
+
+              <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
+                {owner?.job_title ?? displayName}
+                <span style={{ color: 'var(--accent)' }}>.</span>
               </h1>
-              <p className="mt-4 text-lg leading-relaxed text-ink-600 dark:text-ink-300">
-                Je suis <span className="font-semibold text-ink-900 dark:text-white">{displayName}</span>
-                {portfolio.headline && heading !== portfolio.headline
-                  ? ` — ${portfolio.headline.replace(/\.$/, '')}.`
-                  : '.'}
+
+              <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-500 dark:text-ink-300">
+                Salut, je suis {displayName}.{' '}
+                {portfolio.headline ?? "Bienvenue sur mon portfolio."}
               </p>
               {portfolio.bio && (
-                <p className="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-400">
+                <p className="mt-3 max-w-lg text-sm leading-relaxed text-ink-400">
                   {portfolio.bio}
                 </p>
               )}
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <a
+                  href="#projets"
+                  className="inline-flex items-center gap-2 rounded-full border border-ink-200 px-5 py-2.5 text-sm font-semibold text-ink-800 transition hover:bg-cream-100 dark:border-ink-700 dark:text-white dark:hover:bg-ink-800"
+                >
+                  Voir mes projets
+                </a>
+                <a
+                  href="#contact"
+                  className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-90"
+                  style={{ backgroundColor: 'var(--accent)' }}
+                >
+                  Me contacter
+                  <ArrowRight size={15} />
+                </a>
+              </div>
+
+              {tools.length > 0 && (
+                <div className="mt-10 flex flex-wrap gap-3">
+                  {tools.slice(0, 5).map((slug) => (
+                    <span
+                      key={slug}
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-ink-100 bg-cream-100 dark:border-ink-800 dark:bg-ink-900"
+                      title={findTool(slug)?.name}
+                    >
+                      <img
+                        src={toolLogoUrl(slug)}
+                        alt={findTool(slug)?.name ?? slug}
+                        className="h-7 w-7 object-contain"
+                        loading="lazy"
+                      />
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {projects.length > 0 && (
-                <a href="#projets" className="btn-primary">
-                  Voir mes projets
-                  <ArrowDown size={14} />
-                </a>
-              )}
-              <a href="#contact" className="btn-secondary dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700">
-                Me contacter
-              </a>
-              {whatsappLink && (
-                <a
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-secondary dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700"
-                >
-                  <MessageCircle size={14} />
-                  WhatsApp
-                </a>
-              )}
-            </div>
-          </header>
+            {portfolio.photo_url && (
+              <div className="order-first md:order-none">
+                <img
+                  src={portfolio.photo_url}
+                  alt={displayName}
+                  className="aspect-[4/5] w-full rounded-3xl object-cover"
+                />
+              </div>
+            )}
+          </section>
 
           {/* ------------------------------------------------ Outils */}
-          {portfolio.tools.length > 0 && (
-            <section id="outils" className="mt-20">
-              <SectionTitle>Les outils que j'utilise</SectionTitle>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                {portfolio.tools.map((slug) => {
-                  const tool = findTool(slug)
-                  if (!tool) return null
+          {tools.length > 0 && (
+            <section id="outils" className="scroll-mt-24 py-16 md:py-24">
+              <SectionHeading
+                eyebrow="Stack"
+                title="Les outils que j'utilise"
+                subtitle="Une sélection d'outils sur lesquels je m'appuie au quotidien pour livrer un travail soigné"
+              />
+              <div className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-3">
+                {tools.map((slug) => {
+                  const tool = findTool(slug)!
                   return (
                     <span
                       key={slug}
-                      className="inline-flex items-center gap-2 rounded-full border border-ink-100 bg-cream-100 px-3.5 py-2 text-sm font-medium text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-200"
+                      className="inline-flex items-center gap-2.5 rounded-full border border-ink-100 bg-cream-100 py-2.5 pl-3 pr-5 text-sm font-semibold dark:border-ink-800 dark:bg-ink-900"
                     >
                       <img
                         src={toolLogoUrl(slug)}
                         alt=""
+                        className="h-6 w-6 object-contain"
                         loading="lazy"
-                        className="h-[18px] w-[18px] object-contain dark:rounded-full dark:bg-white dark:p-[2px]"
-                        onError={(e) => {
-                          ;(e.target as HTMLImageElement).style.display = 'none'
-                        }}
                       />
                       {tool.name}
                     </span>
@@ -222,26 +276,31 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Projets */}
           {projects.length > 0 && (
-            <section id="projets" className="mt-20">
-              <SectionTitle>Projets</SectionTitle>
-              <div className="mt-6 space-y-6">
+            <section id="projets" className="scroll-mt-24 py-16 md:py-24">
+              <SectionHeading
+                eyebrow="Projets"
+                title="Mes réalisations"
+                subtitle="Un aperçu de projets qui montrent comment je transforme des idées en résultats concrets"
+              />
+              <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-2">
                 {projects.map((p) => (
-                  <article
-                    key={p.id}
-                    className="overflow-hidden rounded-2xl border border-ink-100 bg-cream-100 transition hover:border-ink-200 dark:border-ink-800 dark:bg-ink-900 dark:hover:border-ink-700"
-                  >
-                    {p.image_url && (
-                      <img
-                        src={p.image_url}
-                        alt=""
-                        className="h-56 w-full object-cover"
-                        loading="lazy"
-                      />
+                  <article key={p.id} className="group">
+                    {p.image_url ? (
+                      <div className="overflow-hidden rounded-3xl">
+                        <img
+                          src={p.image_url}
+                          alt={p.title}
+                          className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-3xl bg-cream-100 text-ink-300 dark:bg-ink-900" />
                     )}
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold">{p.title}</h3>
+                    <div className="mt-5">
+                      <h3 className="text-xl font-semibold">{p.title}</h3>
                       {p.description && (
-                        <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">
+                        <p className="mt-2 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
                           {p.description}
                         </p>
                       )}
@@ -250,9 +309,10 @@ export function PublicPortfolioPage() {
                           href={p.external_link}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent-500 hover:underline dark:text-accent-400"
+                          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+                          style={{ color: 'var(--accent)' }}
                         >
-                          Voir le site
+                          Voir le projet
                           <ArrowUpRight size={14} />
                         </a>
                       )}
@@ -265,231 +325,236 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Expérience */}
           {experiences.length > 0 && (
-            <section id="experience" className="mt-20">
-              <SectionTitle>Expérience</SectionTitle>
-              <div className="mt-6 space-y-8">
+            <section id="experience" className="scroll-mt-24 py-16 md:py-24">
+              <SectionHeading
+                eyebrow="Expérience"
+                title="Mon parcours"
+                subtitle="Un résumé de mon parcours professionnel et de l'impact que j'ai eu"
+              />
+              <div className="mx-auto mt-12 max-w-4xl space-y-5">
                 {experiences.map((x) => (
-                  <div
+                  <article
                     key={x.id}
-                    className="grid grid-cols-1 gap-2 sm:grid-cols-[140px_1fr] sm:gap-6"
+                    className="rounded-3xl border border-ink-100 bg-cream-100/60 p-7 dark:border-ink-800 dark:bg-ink-900/60 md:p-9"
                   >
-                    <p className="font-mono text-sm text-ink-400 dark:text-ink-500">
-                      {x.start_year} — {x.end_year || "Aujourd'hui"}
-                    </p>
-                    <div>
-                      <h3 className="text-base font-semibold">
-                        {x.role}
-                        <span className="font-normal text-ink-500 dark:text-ink-400">
-                          {' '}
-                          · {x.company}
-                        </span>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="text-lg font-semibold md:text-xl">
+                        {x.role} — {x.company}
                       </h3>
-                      {x.description && (
-                        <ul className="mt-2 space-y-1.5">
-                          {x.description
-                            .split('\n')
-                            .filter(Boolean)
-                            .map((line, i) => (
-                              <li
-                                key={i}
-                                className="flex gap-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300"
-                              >
-                                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent-500" />
-                                {line.replace(/^[-•]\s*/, '')}
-                              </li>
-                            ))}
-                        </ul>
-                      )}
+                      <span className="font-mono text-sm text-ink-400">
+                        {x.start_year} — {x.end_year || "Aujourd'hui"}
+                      </span>
                     </div>
-                  </div>
+                    {x.description && (
+                      <ul className="mt-4 space-y-2.5">
+                        {x.description
+                          .split('\n')
+                          .filter(Boolean)
+                          .map((line, i) => (
+                            <li
+                              key={i}
+                              className="flex gap-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300 md:text-base"
+                            >
+                              <span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-ink-300 dark:bg-ink-600" />
+                              {line.replace(/^[-•]\s*/, '')}
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </article>
                 ))}
               </div>
 
               {portfolio.cv_url && (
-                <a
-                  href={portfolio.cv_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-primary mt-8"
-                >
-                  <Download size={14} />
-                  Télécharger mon CV
-                </a>
-              )}
-            </section>
-          )}
-
-          {/* ------------------------------------------------ Services */}
-          {services.length > 0 && (
-            <section id="services" className="mt-20">
-              <SectionTitle>Services</SectionTitle>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {services.map((s) => (
-                  <div
-                    key={s.id}
-                    className="rounded-2xl border border-ink-100 bg-cream-100 p-5 dark:border-ink-800 dark:bg-ink-900"
+                <div className="mt-10 text-center">
+                  <a
+                    href={portfolio.cv_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-ink-200 px-6 py-3 text-sm font-semibold transition hover:bg-cream-100 dark:border-ink-700 dark:hover:bg-ink-800"
                   >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h3 className="text-base font-semibold">{s.title}</h3>
-                      {s.price != null && (
-                        <span className="shrink-0 font-mono text-sm text-accent-500 dark:text-accent-400">
-                          {s.price.toLocaleString('fr-FR')} {s.currency}
-                        </span>
-                      )}
-                    </div>
-                    {s.description && (
-                      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">
-                        {s.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    <Download size={15} />
+                    Télécharger mon CV
+                  </a>
+                </div>
+              )}
             </section>
           )}
 
           {/* ------------------------------------------------ Témoignages */}
           {testimonials.length > 0 && (
-            <section id="temoignages" className="mt-20">
-              <SectionTitle>Témoignages</SectionTitle>
+            <section id="temoignages" className="scroll-mt-24 py-16 md:py-24">
+              <SectionHeading
+                eyebrow="Témoignages"
+                title="Ils me font confiance"
+                subtitle="Ce que mes clients disent de notre collaboration"
+              />
+              <div className="mt-12 space-y-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+                <MarqueeRow items={testimonials} />
+                {testimonials.length > 1 && (
+                  <MarqueeRow items={[...testimonials].reverse()} reverse />
+                )}
+              </div>
             </section>
           )}
-        </div>
 
-        {/* Marquee pleine largeur (hors du conteneur étroit) */}
-        {testimonials.length > 0 && (
-          <TestimonialsMarquee testimonials={testimonials} />
-        )}
-
-        <div className="mx-auto max-w-2xl px-6 pb-16">
           {/* ------------------------------------------------ Contact */}
-          <section id="contact" className="mt-20">
-            <SectionTitle>Contact</SectionTitle>
-            <div className="mt-6 rounded-2xl border border-ink-100 bg-cream-100 dark:border-ink-800 dark:bg-ink-900 [&>form]:border-0 [&>form]:bg-transparent">
+          <section id="contact" className="scroll-mt-24 py-16 md:py-24">
+            <div className="relative overflow-hidden rounded-3xl bg-ink-900 px-6 py-20 text-center dark:bg-ink-900 md:py-28">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-60"
+                style={{
+                  background:
+                    'radial-gradient(60% 80% at 50% 0%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)',
+                }}
+              />
+              <div className="relative">
+                <h2 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+                  Construisons quelque chose de grand
+                </h2>
+                <p className="mx-auto mt-4 max-w-md text-ink-300">
+                  Donne vie à tes idées avec un travail soigné, pensé pour tes
+                  clients
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <a
+                    href="#devis"
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink-900 transition hover:bg-ink-100"
+                  >
+                    Me contacter
+                    <ArrowRight size={15} />
+                  </a>
+                  {whatsappLink && (
+                    <a
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-ink-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-ink-800"
+                    >
+                      <MessageCircle size={15} />
+                      WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div id="devis" className="mx-auto mt-12 max-w-2xl scroll-mt-24">
               <PublicLeadForm
                 userId={portfolio.user_id}
                 ownerFirstName={owner?.first_name}
               />
             </div>
           </section>
+        </main>
 
-          {/* ------------------------------------------------ Footer */}
-          <footer className="mt-20 border-t border-ink-100 pt-8 dark:border-ink-800">
-            <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-500 dark:text-ink-400">
-              {portfolio.tools.length > 0 && (
-                <a href="#outils" className="hover:text-ink-900 dark:hover:text-white">
-                  Outils
-                </a>
+        {/* ------------------------------------------------ Footer */}
+        <footer className="border-t border-ink-100 py-10 dark:border-ink-800">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-5 md:flex-row md:justify-between">
+            <p className="text-sm text-ink-400">
+              © {new Date().getFullYear()} {displayName}
+            </p>
+            <nav className="flex flex-wrap justify-center gap-5">
+              {[...NAV_LINKS, { href: '#contact', label: 'Contact' }].map(
+                (l) => (
+                  <a
+                    key={l.href}
+                    href={l.href}
+                    className="text-sm text-ink-500 transition hover:text-ink-900 dark:text-ink-400 dark:hover:text-white"
+                  >
+                    {l.label}
+                  </a>
+                ),
               )}
-              {projects.length > 0 && (
-                <a href="#projets" className="hover:text-ink-900 dark:hover:text-white">
-                  Projets
-                </a>
-              )}
-              {experiences.length > 0 && (
-                <a href="#experience" className="hover:text-ink-900 dark:hover:text-white">
-                  Expérience
-                </a>
-              )}
-              {testimonials.length > 0 && (
-                <a href="#temoignages" className="hover:text-ink-900 dark:hover:text-white">
-                  Témoignages
-                </a>
-              )}
-              <a href="#contact" className="hover:text-ink-900 dark:hover:text-white">
-                Contact
-              </a>
             </nav>
-            <p className="mt-6 text-xs text-ink-400 dark:text-ink-500">
-              © {new Date().getFullYear()} {displayName} — Portfolio propulsé par{' '}
+            <p className="text-sm text-ink-400">
+              Propulsé par{' '}
               <Link
                 to="/"
-                className="font-semibold text-ink-500 hover:text-ink-900 dark:text-ink-400 dark:hover:text-white"
+                className="font-semibold text-ink-500 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white"
               >
                 Pipeline
               </Link>
             </p>
-          </footer>
-        </div>
+          </div>
+        </footer>
       </div>
     </div>
   )
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-400 dark:text-ink-500">
-      {children}
-    </h2>
-  )
-}
-
-function TestimonialsMarquee({
-  testimonials,
+function SectionHeading({
+  eyebrow,
+  title,
+  subtitle,
 }: {
-  testimonials: PortfolioTestimonial[]
+  eyebrow: string
+  title: string
+  subtitle?: string
 }) {
-  const { rowA, rowB } = useMemo(() => {
-    if (testimonials.length < 4) {
-      return { rowA: testimonials, rowB: [] as PortfolioTestimonial[] }
-    }
-    const half = Math.ceil(testimonials.length / 2)
-    return { rowA: testimonials.slice(0, half), rowB: testimonials.slice(half) }
-  }, [testimonials])
-
   return (
-    <div className="mt-6 space-y-4 overflow-hidden">
-      <MarqueeRow items={rowA} reverse={false} />
-      {rowB.length > 0 && <MarqueeRow items={rowB} reverse />}
+    <div className="text-center">
+      <span className="inline-flex rounded-full border border-ink-100 bg-cream-100 px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-300">
+        {eyebrow}
+      </span>
+      <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="mx-auto mt-4 max-w-md text-ink-500 dark:text-ink-400">
+          {subtitle}
+        </p>
+      )}
     </div>
   )
 }
 
 function MarqueeRow({
   items,
-  reverse,
+  reverse = false,
 }: {
   items: PortfolioTestimonial[]
-  reverse: boolean
+  reverse?: boolean
 }) {
-  // Contenu dupliqué pour un défilement continu sans couture
-  const doubled = [...items, ...items]
-  const animate = items.length > 1
-
+  // Duplique le contenu pour une boucle infinie sans couture
+  const doubled = [...items, ...items, ...items, ...items].slice(
+    0,
+    Math.max(8, items.length * 2),
+  )
   return (
-    <div className="relative">
+    <div className="group flex overflow-hidden">
       <div
-        className={`flex w-max gap-4 ${
-          animate
-            ? reverse
-              ? 'animate-marquee-reverse hover:[animation-play-state:paused]'
-              : 'animate-marquee hover:[animation-play-state:paused]'
-            : 'mx-auto'
+        className={`flex w-max shrink-0 gap-5 pr-5 group-hover:[animation-play-state:paused] ${
+          reverse ? 'animate-marquee-reverse' : 'animate-marquee'
         }`}
       >
-        {(animate ? doubled : items).map((t, i) => (
-          <blockquote
-            key={`${t.id}-${i}`}
-            className="w-80 shrink-0 rounded-2xl border border-ink-100 bg-cream-100 p-5 dark:border-ink-800 dark:bg-ink-900"
-          >
-            <p className="text-sm leading-relaxed text-ink-700 dark:text-ink-200">
-              « {t.content} »
-            </p>
-            <footer className="mt-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-ink-900 dark:text-white">
-                {t.client_name}
-              </span>
-              {t.rating != null && (
-                <span className="flex items-center gap-0.5 text-accent-500">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} size={11} fill="currentColor" strokeWidth={0} />
-                  ))}
-                </span>
-              )}
-            </footer>
-          </blockquote>
+        {[...doubled, ...doubled].map((t, i) => (
+          <TestimonialCard key={`${t.id}-${i}`} t={t} />
         ))}
       </div>
     </div>
+  )
+}
+
+function TestimonialCard({ t }: { t: PortfolioTestimonial }) {
+  return (
+    <figure className="w-80 shrink-0 rounded-3xl border border-ink-100 bg-cream-100/60 p-6 dark:border-ink-800 dark:bg-ink-900/60">
+    <blockquote className="text-sm leading-relaxed text-ink-600 dark:text-ink-300">
+        « {t.content} »
+      </blockquote>
+      <figcaption className="mt-4 flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{t.client_name}</span>
+        {t.rating != null && (
+          <span
+            className="flex items-center gap-0.5"
+            style={{ color: 'var(--accent)' }}
+          >
+            {Array.from({ length: t.rating }).map((_, i) => (
+              <Star key={i} size={11} fill="currentColor" strokeWidth={0} />
+            ))}
+          </span>
+        )}
+      </figcaption>
+    </figure>
   )
 }

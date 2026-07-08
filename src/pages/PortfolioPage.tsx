@@ -10,6 +10,7 @@ import {
   type PortfolioBundle,
 } from '@/lib/portfolioData'
 import { HeaderSection } from '@/components/portfolio/HeaderSection'
+import { AppearanceSection } from '@/components/portfolio/AppearanceSection'
 import { ServicesSection } from '@/components/portfolio/ServicesSection'
 import { ProjectsSection } from '@/components/portfolio/ProjectsSection'
 import { TestimonialsSection } from '@/components/portfolio/TestimonialsSection'
@@ -267,6 +268,10 @@ export function PortfolioPage() {
             userId={user.id}
             portfolio={portfolio}
             onChange={(patch) => patchPortfolio(patch)}
+          />
+          <AppearanceSection
+            accentColor={portfolio.accent_color}
+            onChange={(accent_color) => patchPortfolio({ accent_color })}
           />
           <ToolsSection
             selected={portfolio.tools ?? []}

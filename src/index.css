@@ -38,4 +38,15 @@
   .card {
     @apply rounded-lg border border-ink-100 bg-cream-50 p-6 shadow-xs;
   }
+
+  /* Sur la page publique du portfolio, la couleur d'accent choisie par
+     l'utilisateur (--accent) remplace le violet de la marque. */
+  .portfolio-accent .btn-primary {
+    background-color: var(--accent, #7f56d9);
+    --tw-ring-color: transparent;
+  }
+  .portfolio-accent .btn-primary:hover {
+    background-color: var(--accent, #7f56d9);
+    filter: brightness(0.9);
+  }
 }

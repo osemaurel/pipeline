@@ -13,6 +13,7 @@ export interface Portfolio {
   is_available: boolean
   cv_url: string | null
   tools: string[]
+  accent_color: string | null
   created_at: string
   updated_at: string
 }
