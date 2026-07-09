@@ -214,21 +214,34 @@ export function PublicPortfolioPage() {
               </div>
 
               {tools.length > 0 && (
-                <div className="mt-10 flex flex-wrap gap-3">
-                  {tools.slice(0, 5).map((slug) => (
-                    <span
-                      key={slug}
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-ink-100 bg-cream-100 dark:border-ink-800 dark:bg-ink-900"
-                      title={findTool(slug)?.name}
-                    >
-                      <img
-                        src={toolLogoUrl(slug)}
-                        alt={findTool(slug)?.name ?? slug}
-                        className="h-7 w-7 object-contain"
-                        loading="lazy"
-                      />
-                    </span>
-                  ))}
+                <div className="group mt-10 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                  <div
+                    className="flex w-max animate-marquee gap-3 group-hover:[animation-play-state:paused]"
+                    style={{ animationDuration: '20s' }}
+                  >
+                    {(() => {
+                      // Assez de tuiles pour couvrir la largeur, puis doublé
+                      // pour une boucle sans couture (translation de -50 %)
+                      const base = [...tools, ...tools, ...tools].slice(
+                        0,
+                        Math.max(8, tools.length),
+                      )
+                      return [...base, ...base].map((slug, i) => (
+                        <span
+                          key={`${slug}-${i}`}
+                          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-ink-100 bg-cream-100 dark:border-ink-800 dark:bg-ink-900"
+                          title={findTool(slug)?.name}
+                        >
+                          <img
+                            src={toolLogoUrl(slug)}
+                            alt={findTool(slug)?.name ?? slug}
+                            className="h-7 w-7 object-contain"
+                            loading="lazy"
+                          />
+                        </span>
+                      ))
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
