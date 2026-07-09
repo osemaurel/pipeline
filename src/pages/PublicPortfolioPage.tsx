@@ -234,7 +234,7 @@ export function PublicPortfolioPage() {
             </div>
 
             {portfolio.photo_url && (
-              <div className="order-first md:order-none">
+              <div>
                 <img
                   src={portfolio.photo_url}
                   alt={displayName}
