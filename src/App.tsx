@@ -10,6 +10,7 @@ import { OnboardingPage } from '@/pages/OnboardingPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
 import { CrmPage } from '@/pages/CrmPage'
+import { LeadSearchPage } from '@/pages/LeadSearchPage'
 import { AiGeneratorPage } from '@/pages/AiGeneratorPage'
 import { RoutinePage } from '@/pages/RoutinePage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/crm" element={<CrmPage />} />
+        <Route path="/recherche" element={<LeadSearchPage />} />
         <Route path="/ai" element={<AiGeneratorPage />} />
         <Route path="/routine" element={<RoutinePage />} />
         <Route path="/resources" element={<ResourcesPage />} />

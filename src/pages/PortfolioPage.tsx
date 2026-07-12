@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, ExternalLink, Eye, EyeOff, Link2, QrCode } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Link2,
+  QrCode,
+  Sparkles,
+} from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import {
   fetchPortfolioBundle,
@@ -17,6 +26,7 @@ import { TestimonialsSection } from '@/components/portfolio/TestimonialsSection'
 import { ToolsSection } from '@/components/portfolio/ToolsSection'
 import { ExperiencesSection } from '@/components/portfolio/ExperiencesSection'
 import { QRCodeCard } from '@/components/portfolio/QRCodeCard'
+import { AiPortfolioModal } from '@/components/portfolio/AiPortfolioModal'
 
 export function PortfolioPage() {
   const user = useAuthStore((s) => s.user)
@@ -30,6 +40,8 @@ export function PortfolioPage() {
   const [showQR, setShowQR] = useState(false)
   const [copyOk, setCopyOk] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showAi, setShowAi] = useState(false)
+  const [aiToast, setAiToast] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -71,6 +83,48 @@ export function PortfolioPage() {
       return
     }
     if (data) setBundle((b) => (b ? { ...b, portfolio: data } : b))
+  }
+
+  const handleAiApplied = async (payload: {
+    headline?: string
+    bio?: string
+    services: PortfolioBundle['services']
+    projects: PortfolioBundle['projects']
+    experiences: PortfolioBundle['experiences']
+    testimonials: PortfolioBundle['testimonials']
+  }) => {
+    // Texte : accroche / bio via upsert du portfolio
+    const textPatch: Partial<Portfolio> = {}
+    if (payload.headline) textPatch.headline = payload.headline
+    if (payload.bio) textPatch.bio = payload.bio
+    if (Object.keys(textPatch).length) await patchPortfolio(textPatch)
+
+    // Listes : ajout aux tableaux existants
+    setBundle((b) =>
+      b
+        ? {
+            ...b,
+            services: [...b.services, ...payload.services],
+            projects: [...b.projects, ...payload.projects],
+            experiences: [...b.experiences, ...payload.experiences],
+            testimonials: [...b.testimonials, ...payload.testimonials],
+          }
+        : b,
+    )
+
+    const added =
+      payload.services.length +
+      payload.projects.length +
+      payload.experiences.length +
+      payload.testimonials.length
+    const bits: string[] = []
+    if (payload.headline || payload.bio) bits.push('texte mis à jour')
+    if (added) bits.push(`${added} élément${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''}`)
+    setShowAi(false)
+    setAiToast(
+      bits.length ? `Contenu généré : ${bits.join(', ')}.` : 'Contenu généré.',
+    )
+    setTimeout(() => setAiToast(null), 5000)
   }
 
   const savePortfolio = async () => {
@@ -128,14 +182,27 @@ export function PortfolioPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <header className="flex items-end justify-between">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-ink-900">Portfolio</h1>
           <p className="mt-1 text-sm text-ink-500">
             Compose la page que tu partageras à tes prospects.
           </p>
         </div>
+        {portfolio && (
+          <button onClick={() => setShowAi(true)} className="btn-primary">
+            <Sparkles size={15} />
+            Générer avec l'IA
+          </button>
+        )}
       </header>
+
+      {aiToast && (
+        <div className="flex items-center gap-2 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">
+          <Check size={15} />
+          {aiToast}
+        </div>
+      )}
 
       <section className="card">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -306,6 +373,20 @@ export function PortfolioPage() {
             }
           />
         </>
+      )}
+
+      {showAi && portfolio && user && bundle && (
+        <AiPortfolioModal
+          userId={user.id}
+          counts={{
+            services: bundle.services.length,
+            projects: bundle.projects.length,
+            experiences: bundle.experiences.length,
+            testimonials: bundle.testimonials.length,
+          }}
+          onClose={() => setShowAi(false)}
+          onApplied={handleAiApplied}
+        />
       )}
     </div>
   )

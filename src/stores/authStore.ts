@@ -102,6 +102,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false })
         return { error: profileError.message }
       }
+      // Crédits de recherche offerts (20). Idempotent côté SQL.
+      await supabase.rpc('init_search_credits', { p_user_id: data.user.id })
       await get().refreshProfile()
     }
 
