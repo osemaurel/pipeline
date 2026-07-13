@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { SUPPORT_EMAIL, useAuthStore } from '@/stores/authStore'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -9,16 +9,40 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [suspended, setSuspended] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuspended(false)
     const { error } = await signIn(email, password)
+    if (error === 'suspended') {
+      setSuspended(true)
+      return
+    }
     if (error) {
       setError(error)
       return
     }
     navigate('/', { replace: true })
+  }
+
+  if (suspended) {
+    return (
+      <div className="space-y-4 text-center">
+        <h2 className="text-lg font-semibold text-ink-900">Compte suspendu</h2>
+        <p className="text-sm text-ink-600">
+          Votre compte a été suspendu. Contactez le support si vous pensez qu’il
+          s’agit d’une erreur.
+        </p>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="btn-primary inline-flex">
+          Contacter le support
+        </a>
+        <button onClick={() => setSuspended(false)} className="block w-full text-sm text-ink-400 hover:text-ink-700">
+          Retour
+        </button>
+      </div>
+    )
   }
 
   return (

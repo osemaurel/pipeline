@@ -17,6 +17,13 @@ import { ResourcesPage } from '@/pages/ResourcesPage'
 import { StatsPage } from '@/pages/StatsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { PublicPortfolioPage } from '@/pages/PublicPortfolioPage'
+import { AdminRoute } from '@/components/admin/AdminRoute'
+import { AdminLayout } from '@/components/admin/AdminLayout'
+import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
+import { AdminActivityPage } from '@/pages/admin/AdminActivityPage'
+import { AdminLogsPage } from '@/pages/admin/AdminLogsPage'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -37,6 +44,22 @@ export default function App() {
   return (
     <Routes>
       <Route path="/p/:slug" element={<PublicPortfolioPage />} />
+
+      {/* Espace admin — layout et protection dédiés */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="users/:id" element={<AdminUserDetailPage />} />
+        <Route path="activity" element={<AdminActivityPage />} />
+        <Route path="logs" element={<AdminLogsPage />} />
+      </Route>
 
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />

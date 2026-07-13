@@ -40,6 +40,9 @@ export interface Profile {
   payment_reference: string | null
   amount_paid: number | null
   currency: string | null
+  is_suspended: boolean
+  suspended_at: string | null
+  suspension_reason: string | null
   created_at: string
   updated_at: string
 }

@@ -3,12 +3,15 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types/database'
 
+export const SUPPORT_EMAIL = 'support@pipeline.app'
+
 interface AuthState {
   session: Session | null
   user: User | null
   profile: Profile | null
   loading: boolean
   initialized: boolean
+  suspended: boolean
   init: () => Promise<void>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (
@@ -38,6 +41,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: false,
   initialized: false,
+  suspended: false,
 
   init: async () => {
     const { data } = await supabase.auth.getSession()
@@ -67,15 +71,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .select('*')
       .eq('user_id', userId)
       .maybeSingle()
-    set({ profile: (data as Profile | null) ?? null })
+    const profile = (data as Profile | null) ?? null
+    // Compte suspendu : déconnexion immédiate + message
+    if (profile?.is_suspended) {
+      await supabase.auth.signOut()
+      set({ session: null, user: null, profile: null, suspended: true })
+      return
+    }
+    set({ profile })
   },
 
   signIn: async (email, password) => {
-    set({ loading: true })
+    set({ loading: true, suspended: false })
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     set({ loading: false })
     if (error) return { error: translateAuthError(error.message) }
     await get().refreshProfile()
+    if (get().suspended) return { error: 'suspended' }
     return { error: null }
   },
 
