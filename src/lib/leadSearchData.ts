@@ -84,52 +84,6 @@ export interface SearchResponse {
   credits_remaining: number
 }
 
-const CATEGORY_TAG: Record<string, { key: string; value: string }> = {
-  restaurant: { key: 'amenity', value: 'restaurant' },
-  fast_food: { key: 'amenity', value: 'fast_food' },
-  cafe: { key: 'amenity', value: 'cafe' },
-  bar: { key: 'amenity', value: 'bar' },
-  bakery: { key: 'shop', value: 'bakery' },
-  hairdresser: { key: 'shop', value: 'hairdresser' },
-  beauty: { key: 'shop', value: 'beauty' },
-  butcher: { key: 'shop', value: 'butcher' },
-  florist: { key: 'shop', value: 'florist' },
-  pharmacy: { key: 'amenity', value: 'pharmacy' },
-  optician: { key: 'shop', value: 'optician' },
-  clothes: { key: 'shop', value: 'clothes' },
-  car_repair: { key: 'shop', value: 'car_repair' },
-  hotel: { key: 'tourism', value: 'hotel' },
-  estate_agent: { key: 'office', value: 'estate_agent' },
-}
-
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://z.overpass-api.de/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-]
-
-interface OsmTags {
-  name?: string
-  website?: string
-  'contact:website'?: string
-  phone?: string
-  'contact:phone'?: string
-  email?: string
-  'contact:email'?: string
-  'addr:housenumber'?: string
-  'addr:street'?: string
-  'addr:postcode'?: string
-  'addr:city'?: string
-}
-
-function buildAddress(t: OsmTags): string | null {
-  const parts = [
-    [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
-    [t['addr:postcode'], t['addr:city']].filter(Boolean).join(' '),
-  ].filter(Boolean)
-  return parts.length ? parts.join(', ') : null
-}
-
 interface OverpassRawResult {
   business_name: string
   address: string | null
@@ -138,65 +92,46 @@ interface OverpassRawResult {
   email: string | null
 }
 
+// L'appel à Overpass passe par notre propre Vercel Serverless Function
+// (`/api/overpass`) au lieu d'un fetch direct depuis le browser. Raison :
+// Overpass API renvoie HTTP 406 sur les fetch qui portent un User-Agent
+// browser (Mozilla/5.0 Chrome), qu'un fetch client ne peut pas overrider.
+// Notre proxy Node envoie un User-Agent "TopCloz/…" accepté par Overpass.
 async function queryOverpass(
   city: string,
   category: string,
   excludeWithWebsite: boolean,
 ): Promise<{ results: OverpassRawResult[] | null; error: string | null }> {
-  const tag = CATEGORY_TAG[category]
-  if (!tag) return { results: null, error: 'Catégorie inconnue.' }
-
-  const query = `[out:json][timeout:25];area["name"="${city.replace(/"/g, '')}"]["boundary"="administrative"]->.a;(node["${tag.key}"="${tag.value}"](area.a);way["${tag.key}"="${tag.value}"](area.a););out center tags 60;`
-
-  let lastErr = ''
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => controller.abort(), 25000)
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(query),
-        signal: controller.signal,
-      })
-      window.clearTimeout(timeoutId)
-      if (!res.ok) {
-        lastErr = `${endpoint} → HTTP ${res.status}`
-        continue
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), 40000)
+  try {
+    const res = await fetch('/api/overpass', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city, category, excludeWithWebsite }),
+      signal: controller.signal,
+    })
+    window.clearTimeout(timeoutId)
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return {
+        results: null,
+        error: typeof body?.error === 'string'
+          ? body.error
+          : `Erreur ${res.status} sur /api/overpass`,
       }
-      const data = await res.json()
-      const elements = (data.elements ?? []) as { tags?: OsmTags }[]
-
-      const results: OverpassRawResult[] = []
-      const seen = new Set<string>()
-      for (const el of elements) {
-        const t = el.tags ?? {}
-        if (!t.name) continue
-        const website = t.website || t['contact:website'] || null
-        if (excludeWithWebsite && website) continue
-        const key = t.name.toLowerCase().trim()
-        if (seen.has(key)) continue
-        seen.add(key)
-        results.push({
-          business_name: t.name,
-          address: buildAddress(t),
-          phone: t.phone || t['contact:phone'] || null,
-          website,
-          email: t.email || t['contact:email'] || null,
-        })
-      }
-      return { results, error: null }
-    } catch (e) {
-      window.clearTimeout(timeoutId)
-      const name = e instanceof Error ? e.name : 'unknown'
-      lastErr = `${endpoint} → ${name}`
     }
+    return { results: (body?.results as OverpassRawResult[]) ?? [], error: null }
+  } catch (e) {
+    window.clearTimeout(timeoutId)
+    const name = e instanceof Error ? e.name : 'unknown'
+    if (name === 'AbortError') {
+      return { results: null, error: 'La recherche a expiré. Réessaie ou choisis une ville plus précise.' }
+    }
+    // eslint-disable-next-line no-console
+    console.error('[queryOverpass] proxy call failed:', e)
+    return { results: null, error: "Le proxy /api/overpass n'a pas répondu. Réessaie dans un instant." }
   }
-  const isTimeout = /AbortError/i.test(lastErr)
-  const msg = isTimeout
-    ? 'La recherche a expiré. Réessaie ou choisis une ville plus précise.'
-    : 'Le service OpenStreetMap est momentanément indisponible. Réessaie dans 1 à 2 minutes.'
-  return { results: null, error: msg }
 }
 
 export async function runBusinessSearch(input: {
