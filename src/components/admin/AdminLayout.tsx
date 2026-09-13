@@ -2,6 +2,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 import {
   Activity,
   ArrowLeft,
+  BookOpen,
   LayoutDashboard,
   ScrollText,
   ShieldCheck,
@@ -12,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore'
 const nav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users, end: false },
+  { to: '/admin/resources', label: 'Ressources', icon: BookOpen, end: false },
   { to: '/admin/activity', label: 'Activité', icon: Activity, end: false },
   { to: '/admin/logs', label: 'Logs', icon: ScrollText, end: false },
 ]

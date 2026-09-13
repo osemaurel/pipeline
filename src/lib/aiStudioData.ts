@@ -148,10 +148,15 @@ export async function fetchSuggestions(userId: string, platform: Platform) {
 }
 
 // ---- Rédaction de service ----
-export function generateService(platform: Platform, suggestedServiceId: string) {
+export function generateService(
+  platform: Platform,
+  suggestedServiceId: string,
+  customInstructions?: string,
+) {
   return invoke<{ service: GeneratedService; credits_remaining: number }>('generate-comeup-service', {
     platform,
     suggested_service_id: suggestedServiceId,
+    custom_instructions: customInstructions?.trim() || undefined,
   })
 }
 export async function fetchGeneratedServices(userId: string, platform: Platform) {

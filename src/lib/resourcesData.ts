@@ -1,187 +1,143 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from './supabase'
 
-export interface Template {
+// ---------------------------------------------------------------------------
+// Modèle : ressources gérées par l'administrateur, visibles par tous les
+// utilisateurs authentifiés (RLS: is_published = true).
+// ---------------------------------------------------------------------------
+
+export type ResourceType = 'ebook' | 'tool' | 'prompt' | 'training'
+
+export const RESOURCE_TYPES: { value: ResourceType; label: string; plural: string }[] = [
+  { value: 'ebook', label: 'Ebook', plural: 'Ebooks' },
+  { value: 'tool', label: 'Outil', plural: 'Outils' },
+  { value: 'prompt', label: 'Prompt', plural: 'Prompts' },
+  { value: 'training', label: 'Formation', plural: 'Formations' },
+]
+
+export interface Resource {
   id: string
-  user_id: string
-  category: string
+  type: ResourceType
   title: string
-  subject: string | null
-  content: string
-  channel: string
-  is_default: boolean
+  description: string | null
+  cover_url: string | null
+  content_url: string | null
+  content_text: string | null
+  duration_minutes: number | null
+  category: string | null
+  is_published: boolean
+  display_order: number
+  created_by: string | null
   created_at: string
+  updated_at: string
 }
 
-export interface DiscoveryQuestion {
-  id: string
-  user_id: string
-  question: string
-  order_index: number
-  is_active: boolean
-}
+export type ResourceInput = Omit<
+  Resource,
+  'id' | 'created_by' | 'created_at' | 'updated_at'
+>
 
-export interface ObjectionResponse {
-  id: string
-  user_id: string
-  objection: string
-  response: string
-}
+// ---------------------------------------------------------------------------
+// Lecture — utilisateur (voit uniquement les publiées) et admin (voit tout)
+// ---------------------------------------------------------------------------
 
-export const TEMPLATE_CATEGORIES = [
-  { value: 'prospection', label: 'Prospection' },
-  { value: 'relance', label: 'Relance' },
-  { value: 'decouverte', label: 'Découverte' },
-  { value: 'proposition', label: 'Proposition' },
-  { value: 'remerciement', label: 'Remerciement' },
-  { value: 'autre', label: 'Autre' },
-] as const
-
-export const TEMPLATE_CHANNELS = [
-  { value: 'email', label: 'Email' },
-  { value: 'linkedin', label: 'LinkedIn' },
-  { value: 'whatsapp', label: 'WhatsApp' },
-] as const
-
-// ----------------------------------------------------------------------------
-// Templates
-// ----------------------------------------------------------------------------
-
-export async function fetchTemplates(userId: string): Promise<Template[]> {
-  const { data } = await supabase
-    .from('templates')
+export async function fetchPublishedResources(type?: ResourceType): Promise<Resource[]> {
+  let q = supabase
+    .from('admin_resources')
     .select('*')
-    .eq('user_id', userId)
+    .eq('is_published', true)
+    .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
-  return (data as Template[]) ?? []
+  if (type) q = q.eq('type', type)
+  const { data } = await q
+  return (data as Resource[] | null) ?? []
 }
 
-export async function saveTemplate(
-  input: Partial<Template> & { user_id: string; category: string; title: string; content: string },
-) {
-  if (input.id) {
-    const { id, ...patch } = input
-    const { data, error } = await supabase
-      .from('templates')
-      .update(patch)
-      .eq('id', id)
-      .select()
-      .single()
-    return { data: (data as Template | null) ?? null, error: error?.message ?? null }
-  }
-  const { data, error } = await supabase
-    .from('templates')
-    .insert(input)
-    .select()
-    .single()
-  return { data: (data as Template | null) ?? null, error: error?.message ?? null }
-}
-
-export async function deleteTemplate(id: string) {
-  await supabase.from('templates').delete().eq('id', id)
-}
-
-// ----------------------------------------------------------------------------
-// Discovery questions
-// ----------------------------------------------------------------------------
-
-export async function fetchDiscoveryQuestions(
-  userId: string,
-): Promise<DiscoveryQuestion[]> {
+export async function fetchAllResources(): Promise<Resource[]> {
   const { data } = await supabase
-    .from('discovery_questions')
+    .from('admin_resources')
     .select('*')
-    .eq('user_id', userId)
-    .order('order_index', { ascending: true })
-  return (data as DiscoveryQuestion[]) ?? []
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: false })
+  return (data as Resource[] | null) ?? []
 }
 
-export async function saveDiscoveryQuestion(
-  input: Partial<DiscoveryQuestion> & { user_id: string; question: string },
-) {
-  if (input.id) {
-    const { id, ...patch } = input
-    const { data, error } = await supabase
-      .from('discovery_questions')
-      .update(patch)
-      .eq('id', id)
-      .select()
-      .single()
-    return {
-      data: (data as DiscoveryQuestion | null) ?? null,
-      error: error?.message ?? null,
-    }
-  }
+export async function fetchResource(id: string): Promise<Resource | null> {
+  const { data } = await supabase.from('admin_resources').select('*').eq('id', id).maybeSingle()
+  return (data as Resource | null) ?? null
+}
+
+// ---------------------------------------------------------------------------
+// CRUD admin — protégés côté serveur par RLS (is_admin())
+// ---------------------------------------------------------------------------
+
+export async function createResource(
+  input: ResourceInput,
+): Promise<{ data: Resource | null; error: string | null }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const { data, error } = await supabase
-    .from('discovery_questions')
-    .insert(input)
+    .from('admin_resources')
+    .insert({ ...input, created_by: user?.id ?? null })
     .select()
     .single()
-  return {
-    data: (data as DiscoveryQuestion | null) ?? null,
-    error: error?.message ?? null,
-  }
+  return { data: (data as Resource | null) ?? null, error: error?.message ?? null }
 }
 
-export async function deleteDiscoveryQuestion(id: string) {
-  await supabase.from('discovery_questions').delete().eq('id', id)
-}
-
-export async function reorderDiscoveryQuestions(
-  ids: string[],
-): Promise<void> {
-  await Promise.all(
-    ids.map((id, index) =>
-      supabase.from('discovery_questions').update({ order_index: index }).eq('id', id),
-    ),
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Objection responses
-// ----------------------------------------------------------------------------
-
-export async function fetchObjectionResponses(
-  userId: string,
-): Promise<ObjectionResponse[]> {
-  const { data } = await supabase
-    .from('objection_responses')
-    .select('*')
-    .eq('user_id', userId)
-    .order('objection', { ascending: true })
-  return (data as ObjectionResponse[]) ?? []
-}
-
-export async function saveObjectionResponse(
-  input: Partial<ObjectionResponse> & {
-    user_id: string
-    objection: string
-    response: string
-  },
-) {
-  if (input.id) {
-    const { id, ...patch } = input
-    const { data, error } = await supabase
-      .from('objection_responses')
-      .update(patch)
-      .eq('id', id)
-      .select()
-      .single()
-    return {
-      data: (data as ObjectionResponse | null) ?? null,
-      error: error?.message ?? null,
-    }
-  }
+export async function updateResource(
+  id: string,
+  patch: Partial<ResourceInput>,
+): Promise<{ data: Resource | null; error: string | null }> {
   const { data, error } = await supabase
-    .from('objection_responses')
-    .insert(input)
+    .from('admin_resources')
+    .update(patch)
+    .eq('id', id)
     .select()
     .single()
-  return {
-    data: (data as ObjectionResponse | null) ?? null,
-    error: error?.message ?? null,
-  }
+  return { data: (data as Resource | null) ?? null, error: error?.message ?? null }
 }
 
-export async function deleteObjectionResponse(id: string) {
-  await supabase.from('objection_responses').delete().eq('id', id)
+export async function deleteResource(id: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('admin_resources').delete().eq('id', id)
+  return { error: error?.message ?? null }
+}
+
+export async function toggleResourcePublished(
+  id: string,
+  next: boolean,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('admin_resources')
+    .update({ is_published: next })
+    .eq('id', id)
+  return { error: error?.message ?? null }
+}
+
+// ---------------------------------------------------------------------------
+// Upload fichier (cover image ou PDF ebook) vers le bucket `resources`
+// ---------------------------------------------------------------------------
+
+export async function uploadResourceFile(
+  file: File,
+  folder: 'covers' | 'ebooks',
+): Promise<{ url: string | null; error: string | null }> {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'bin'
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('resources').upload(path, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+  })
+  if (error) return { url: null, error: error.message }
+  const { data: pub } = supabase.storage.from('resources').getPublicUrl(path)
+  return { url: pub.publicUrl, error: null }
+}
+
+// ---------------------------------------------------------------------------
+// Utilitaires côté UI
+// ---------------------------------------------------------------------------
+
+export function uniqueCategories(resources: Resource[]): string[] {
+  const set = new Set<string>()
+  for (const r of resources) if (r.category?.trim()) set.add(r.category.trim())
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))
 }

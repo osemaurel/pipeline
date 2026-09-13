@@ -24,6 +24,7 @@ import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { AdminUserDetailPage } from '@/pages/admin/AdminUserDetailPage'
 import { AdminActivityPage } from '@/pages/admin/AdminActivityPage'
 import { AdminLogsPage } from '@/pages/admin/AdminLogsPage'
+import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -57,6 +58,7 @@ export default function App() {
         <Route index element={<AdminDashboardPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="users/:id" element={<AdminUserDetailPage />} />
+        <Route path="resources" element={<AdminResourcesPage />} />
         <Route path="activity" element={<AdminActivityPage />} />
         <Route path="logs" element={<AdminLogsPage />} />
       </Route>
