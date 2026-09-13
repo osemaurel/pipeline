@@ -76,6 +76,17 @@ function buildAddress(t: OsmTags): string | null {
   return parts.length ? parts.join(", ") : null
 }
 
+// Les serveurs Overpass sont réputés instables — on essaie plusieurs endpoints
+// en cascade jusqu'à en trouver un qui répond. `overpass-api.de` (le principal)
+// est souvent surchargé aux heures de pointe ; les mirrors `z.overpass-api.de`
+// et `lz4.overpass-api.de` sont maintenus par la même équipe et servent de
+// repli fiable.
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://z.overpass-api.de/api/interpreter",
+  "https://lz4.overpass-api.de/api/interpreter",
+]
+
 async function runOverpass(
   city: string,
   key: string,
@@ -83,26 +94,33 @@ async function runOverpass(
 ): Promise<{ tags: OsmTags }[]> {
   const query = `[out:json][timeout:25];area["name"="${city.replace(/"/g, "")}"]["boundary"="administrative"]->.a;(node["${key}"="${value}"](area.a);way["${key}"="${value}"](area.a););out center tags 60;`
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 28000)
-  try {
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": USER_AGENT,
-      },
-      body: "data=" + encodeURIComponent(query),
-      signal: controller.signal,
-    })
-    if (!res.ok) {
-      throw new Error(`Overpass ${res.status}`)
+  const errors: string[] = []
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 22000)
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": USER_AGENT,
+        },
+        body: "data=" + encodeURIComponent(query),
+        signal: controller.signal,
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return (data.elements ?? []) as { tags: OsmTags }[]
+      }
+      errors.push(`${endpoint} → HTTP ${res.status}`)
+    } catch (e) {
+      const name = e instanceof Error ? e.name : "unknown"
+      errors.push(`${endpoint} → ${name}`)
+    } finally {
+      clearTimeout(timeout)
     }
-    const data = await res.json()
-    return (data.elements ?? []) as { tags: OsmTags }[]
-  } finally {
-    clearTimeout(timeout)
   }
+  throw new Error(`All Overpass endpoints failed: ${errors.join(" | ")}`)
 }
 
 // Enrichit un résultat avec le dirigeant via l'annuaire des entreprises.
@@ -205,10 +223,13 @@ Deno.serve(async (req) => {
   try {
     elements = await runOverpass(city, cat.key, cat.value)
   } catch (e) {
-    const msg =
-      e instanceof Error && e.name === "AbortError"
-        ? "La recherche a expiré (ville trop grande ou service surchargé). Réessaie ou choisis une ville plus précise."
-        : "Le service de cartographie est momentanément indisponible. Réessaie dans un instant."
+    // Message côté user, détail technique côté log
+    const detail = e instanceof Error ? e.message : String(e)
+    console.error("[search-businesses] Overpass failure:", detail)
+    const isAbort = e instanceof Error && e.name === "AbortError"
+    const msg = isAbort
+      ? "La recherche a expiré (ville trop grande ou service surchargé). Réessaie ou choisis une ville plus précise."
+      : "Les serveurs OpenStreetMap sont saturés pour l'instant. Réessaie dans 1 à 2 minutes."
     await admin
       .from("lead_searches")
       .update({ status: "failed", error_message: msg })

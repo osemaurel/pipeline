@@ -70,7 +70,10 @@ export async function fetchCredits(userId: string): Promise<number> {
 }
 
 // ----------------------------------------------------------------------------
-// Recherche (Edge Function)
+// Recherche : appel Overpass côté client (les serveurs Overpass bloquent les
+// IPs data-center type Deno Deploy / Supabase Edge → HTTP 406). Depuis le
+// navigateur du user, l'IP consommateur passe. L'edge function garde le rôle
+// vérif crédits + enrichissement dirigeant + persistence + débit.
 // ----------------------------------------------------------------------------
 
 export interface SearchResponse {
@@ -81,14 +84,138 @@ export interface SearchResponse {
   credits_remaining: number
 }
 
+const CATEGORY_TAG: Record<string, { key: string; value: string }> = {
+  restaurant: { key: 'amenity', value: 'restaurant' },
+  fast_food: { key: 'amenity', value: 'fast_food' },
+  cafe: { key: 'amenity', value: 'cafe' },
+  bar: { key: 'amenity', value: 'bar' },
+  bakery: { key: 'shop', value: 'bakery' },
+  hairdresser: { key: 'shop', value: 'hairdresser' },
+  beauty: { key: 'shop', value: 'beauty' },
+  butcher: { key: 'shop', value: 'butcher' },
+  florist: { key: 'shop', value: 'florist' },
+  pharmacy: { key: 'amenity', value: 'pharmacy' },
+  optician: { key: 'shop', value: 'optician' },
+  clothes: { key: 'shop', value: 'clothes' },
+  car_repair: { key: 'shop', value: 'car_repair' },
+  hotel: { key: 'tourism', value: 'hotel' },
+  estate_agent: { key: 'office', value: 'estate_agent' },
+}
+
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+]
+
+interface OsmTags {
+  name?: string
+  website?: string
+  'contact:website'?: string
+  phone?: string
+  'contact:phone'?: string
+  email?: string
+  'contact:email'?: string
+  'addr:housenumber'?: string
+  'addr:street'?: string
+  'addr:postcode'?: string
+  'addr:city'?: string
+}
+
+function buildAddress(t: OsmTags): string | null {
+  const parts = [
+    [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
+    [t['addr:postcode'], t['addr:city']].filter(Boolean).join(' '),
+  ].filter(Boolean)
+  return parts.length ? parts.join(', ') : null
+}
+
+interface OverpassRawResult {
+  business_name: string
+  address: string | null
+  phone: string | null
+  website: string | null
+  email: string | null
+}
+
+async function queryOverpass(
+  city: string,
+  category: string,
+  excludeWithWebsite: boolean,
+): Promise<{ results: OverpassRawResult[] | null; error: string | null }> {
+  const tag = CATEGORY_TAG[category]
+  if (!tag) return { results: null, error: 'Catégorie inconnue.' }
+
+  const query = `[out:json][timeout:25];area["name"="${city.replace(/"/g, '')}"]["boundary"="administrative"]->.a;(node["${tag.key}"="${tag.value}"](area.a);way["${tag.key}"="${tag.value}"](area.a););out center tags 60;`
+
+  let lastErr = ''
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 25000)
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(query),
+        signal: controller.signal,
+      })
+      window.clearTimeout(timeoutId)
+      if (!res.ok) {
+        lastErr = `${endpoint} → HTTP ${res.status}`
+        continue
+      }
+      const data = await res.json()
+      const elements = (data.elements ?? []) as { tags?: OsmTags }[]
+
+      const results: OverpassRawResult[] = []
+      const seen = new Set<string>()
+      for (const el of elements) {
+        const t = el.tags ?? {}
+        if (!t.name) continue
+        const website = t.website || t['contact:website'] || null
+        if (excludeWithWebsite && website) continue
+        const key = t.name.toLowerCase().trim()
+        if (seen.has(key)) continue
+        seen.add(key)
+        results.push({
+          business_name: t.name,
+          address: buildAddress(t),
+          phone: t.phone || t['contact:phone'] || null,
+          website,
+          email: t.email || t['contact:email'] || null,
+        })
+      }
+      return { results, error: null }
+    } catch (e) {
+      window.clearTimeout(timeoutId)
+      const name = e instanceof Error ? e.name : 'unknown'
+      lastErr = `${endpoint} → ${name}`
+    }
+  }
+  const isTimeout = /AbortError/i.test(lastErr)
+  const msg = isTimeout
+    ? 'La recherche a expiré. Réessaie ou choisis une ville plus précise.'
+    : 'Le service OpenStreetMap est momentanément indisponible. Réessaie dans 1 à 2 minutes.'
+  return { results: null, error: msg }
+}
+
 export async function runBusinessSearch(input: {
   city: string
   category: string
   exclude_with_website: boolean
 }): Promise<{ data: SearchResponse | null; error: string | null }> {
+  // Étape 1 : appel Overpass côté client (IP consommateur, non blacklistée)
+  const { results: rawResults, error: overpassError } = await queryOverpass(
+    input.city,
+    input.category,
+    input.exclude_with_website,
+  )
+  if (overpassError) return { data: null, error: overpassError }
+
+  // Étape 2 : edge function pour vérif crédits, enrichissement, persistence, débit
   const { data, error } = await supabase.functions.invoke<SearchResponse>(
     'search-businesses',
-    { body: input },
+    { body: { ...input, raw_results: rawResults ?? [] } },
   )
   if (error) {
     let message = error.message
