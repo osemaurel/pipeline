@@ -27,7 +27,7 @@ interface OwnerProfile {
   company_name: string | null
 }
 
-const THEME_KEY = 'pipeline_portfolio_theme'
+const THEME_KEY = 'topcloz_portfolio_theme'
 
 const NAV_LINKS = [
   { href: '#outils', label: 'Outils' },
@@ -53,7 +53,7 @@ export function PublicPortfolioPage() {
       if (b?.portfolio) {
         const o = await fetchOwnerProfileForPortfolio(slug)
         setOwner(o)
-        const key = `pipeline_viewed_${slug}`
+        const key = `topcloz_viewed_${slug}`
         if (!sessionStorage.getItem(key)) {
           sessionStorage.setItem(key, '1')
           incrementPortfolioView(slug)
@@ -75,7 +75,7 @@ export function PublicPortfolioPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="animate-pulse text-xl font-semibold text-ink-400">
-          Pipeline
+          TopCloz
         </div>
       </div>
     )
@@ -95,7 +95,7 @@ export function PublicPortfolioPage() {
             to="/"
             className="mt-4 inline-block text-accent-600 hover:underline"
           >
-            Retour à Pipeline
+            Retour à TopCloz
           </Link>
         </div>
       </div>
@@ -486,7 +486,7 @@ export function PublicPortfolioPage() {
                 to="/"
                 className="font-semibold text-ink-500 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white"
               >
-                Pipeline
+                TopCloz
               </Link>
             </p>
           </div>

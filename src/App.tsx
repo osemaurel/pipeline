@@ -36,7 +36,7 @@ export default function App() {
   if (!initialized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream-50 text-ink-500">
-        <div className="animate-pulse text-xl font-semibold">Pipeline</div>
+        <div className="animate-pulse text-xl font-semibold">TopCloz</div>
       </div>
     )
   }

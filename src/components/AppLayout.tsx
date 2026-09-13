@@ -56,7 +56,7 @@ export function AppLayout() {
             <Filter size={16} className="text-white" strokeWidth={2.5} />
           </div>
           <h1 className="text-lg font-bold tracking-tight text-ink-900">
-            Pipeline
+            TopCloz
           </h1>
         </div>
 

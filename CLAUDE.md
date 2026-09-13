@@ -1,4 +1,7 @@
-# Pipeline — Contexte projet pour Claude Code
+# TopCloz — Contexte projet pour Claude Code
+
+> Anciennement "Pipeline". Le dossier du projet reste `C:\Users\HP\pipeline` — non renommé pour ne pas casser les chemins et l'historique git. Le produit s'appelle désormais **TopCloz**.
+
 
 ## Vision
 

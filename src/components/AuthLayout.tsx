@@ -17,7 +17,7 @@ export function AuthLayout() {
             <Filter size={22} className="text-white" strokeWidth={2.5} />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-ink-900">
-            Pipeline
+            TopCloz
           </h1>
           <p className="mt-2 text-sm text-ink-500">
             Envoie un lien, pas un CV. Suis tes prospects, pas ta mémoire.

@@ -3,7 +3,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types/database'
 
-export const SUPPORT_EMAIL = 'support@pipeline.app'
+export const SUPPORT_EMAIL = 'support@topcloz.app'
 
 interface AuthState {
   session: Session | null

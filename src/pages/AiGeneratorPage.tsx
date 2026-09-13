@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Briefcase, ShoppingBag, Store, Zap } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { fetchCredits } from '@/lib/aiStudioData'
 import { ServicePlatformTab } from '@/components/aistudio/ServicePlatformTab'
 import { UpworkTab } from '@/components/aistudio/UpworkTab'
+import { PlatformIcon } from '@/components/aistudio/PlatformIcon'
 
 type Tab = 'comeup' | 'fiverr' | 'upwork'
 
-const TABS: { value: Tab; label: string; icon: typeof Store; accent: string }[] = [
-  { value: 'comeup', label: 'ComeUp', icon: Store, accent: 'text-[#00A67E]' },
-  { value: 'fiverr', label: 'Fiverr', icon: ShoppingBag, accent: 'text-[#1DBF73]' },
-  { value: 'upwork', label: 'Upwork', icon: Briefcase, accent: 'text-[#14A800]' },
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'comeup', label: 'ComeUp' },
+  { value: 'fiverr', label: 'Fiverr' },
+  { value: 'upwork', label: 'Upwork' },
 ]
 
 export function AiGeneratorPage() {
@@ -51,7 +52,6 @@ export function AiGeneratorPage() {
       {/* Onglets plateformes */}
       <div className="mb-6 grid grid-cols-3 gap-2">
         {TABS.map((t) => {
-          const Icon = t.icon
           const active = tab === t.value
           return (
             <button
@@ -61,7 +61,7 @@ export function AiGeneratorPage() {
                 active ? 'border-accent-500 bg-accent-500/5 text-ink-900' : 'border-ink-100 bg-cream-50 text-ink-500 hover:bg-cream-100'
               }`}
             >
-              <Icon size={17} className={active ? t.accent : 'text-ink-400'} />
+              <PlatformIcon platform={t.value} size={20} />
               {t.label}
             </button>
           )

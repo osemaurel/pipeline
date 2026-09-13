@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Check, ImageIcon, Loader2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, ImageIcon, Loader2, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import {
   STYLE_PRESETS,
   fetchVisualStyle,
@@ -21,6 +21,20 @@ export function ThumbnailModal({ userId, service, onClose, onGenerated }: Props)
   const [saveDefault, setSaveDefault] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [inspiration, setInspiration] = useState<{ base64: string; mime: string; preview: string } | null>(null)
+  const fileInput = useRef<HTMLInputElement | null>(null)
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) return setError('Le fichier doit être une image.')
+    if (file.size > 5 * 1024 * 1024) return setError('Image trop lourde (max 5 Mo).')
+    const buf = await file.arrayBuffer()
+    let binary = ''
+    const bytes = new Uint8Array(buf)
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const base64 = btoa(binary)
+    setInspiration({ base64, mime: file.type, preview: URL.createObjectURL(file) })
+    setError(null)
+  }
 
   useEffect(() => {
     fetchVisualStyle(userId).then((s) => {
@@ -41,6 +55,8 @@ export function ThumbnailModal({ userId, service, onClose, onGenerated }: Props)
       custom_style_prompt: preset === 'custom' ? customPrompt : undefined,
       primary_color: color,
       save_as_default: saveDefault,
+      inspiration_image_base64: inspiration?.base64,
+      inspiration_image_mime: inspiration?.mime,
     })
     setLoading(false)
     if (error || !data) {
@@ -102,6 +118,50 @@ export function ThumbnailModal({ userId, service, onClose, onGenerated }: Props)
               />
             </div>
           )}
+
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <Sparkles size={13} className="text-accent-500" />
+              Image d'inspiration <span className="text-xs font-normal text-ink-400">(optionnel)</span>
+            </label>
+            <p className="mb-2 text-xs text-ink-500">
+              Colle une miniature d'un autre vendeur (ComeUp, Pinterest…) : l'IA s'inspirera de sa composition, sa palette et son style.
+            </p>
+            {inspiration ? (
+              <div className="flex items-center gap-3 rounded-lg border border-ink-100 bg-cream-100 p-2">
+                <img src={inspiration.preview} alt="" className="h-20 w-32 rounded object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-ink-700">Inspiration chargée</p>
+                  <p className="mt-0.5 text-xs text-ink-500">L'IA analysera cette image pour s'en inspirer.</p>
+                </div>
+                <button
+                  onClick={() => { setInspiration(null); if (fileInput.current) fileInput.current.value = '' }}
+                  disabled={loading}
+                  className="text-ink-400 hover:text-danger-600"
+                  title="Retirer"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-ink-200 bg-cream-50 py-3 text-sm text-ink-500 transition hover:border-accent-500/50 hover:bg-cream-100"
+              >
+                <Upload size={14} />
+                Charger une image d'inspiration
+              </button>
+            )}
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+            />
+          </div>
 
           <div className="flex items-center gap-3">
             <label className="label mb-0">Couleur dominante</label>

@@ -37,7 +37,7 @@ export function AdminUsersPage() {
   const exportCsv = async () => {
     const all = await fetchAllUsersForExport({ search: debounced, status, sort })
     downloadCsv(
-      'utilisateurs-pipeline.csv',
+      'utilisateurs-topcloz.csv',
       ['Nom', 'Email', 'Inscription', 'Statut', 'Crédits', 'Prospects', 'Services'],
       all.map((u) => [
         `${u.first_name} ${u.last_name}`, u.email,

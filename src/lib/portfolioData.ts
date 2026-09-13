@@ -82,7 +82,7 @@ const slugify = (input: string) =>
 
 export function suggestSlug(firstName: string, lastName: string) {
   const base = slugify(`${firstName}-${lastName}`)
-  return base || `pipeline-${Math.random().toString(36).slice(2, 8)}`
+  return base || `topcloz-${Math.random().toString(36).slice(2, 8)}`
 }
 
 export async function isSlugAvailable(slug: string, currentUserId: string) {

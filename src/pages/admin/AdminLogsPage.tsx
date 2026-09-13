@@ -26,7 +26,7 @@ export function AdminLogsPage() {
   const exportCsv = async () => {
     const all = await fetchLogs({ actionType: actionType || undefined, pageSize: 5000 })
     downloadCsv(
-      'logs-admin-pipeline.csv',
+      'logs-admin-topcloz.csv',
       ['Date', 'Admin', 'Action', 'Cible', 'Détails'],
       all.rows.map((l) => [
         format(new Date(l.created_at), 'yyyy-MM-dd HH:mm'),

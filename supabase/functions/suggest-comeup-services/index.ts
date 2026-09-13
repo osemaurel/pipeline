@@ -4,7 +4,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0"
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-const MODEL = Deno.env.get("OPENAI_TEXT_MODEL") ?? "gpt-4o"
+// Dernière version de GPT (via API Responses). Surchargeable via secret.
+// Repli auto sur gpt-5.5 puis gpt-4o si le modèle n'est pas dispo sur le compte.
+const OPENAI_TEXT_MODEL = Deno.env.get("OPENAI_TEXT_MODEL") ?? "gpt-5.6"
+const TEXT_FALLBACKS = ["gpt-5.5", "gpt-4o"]
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +18,59 @@ const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } })
 
 const line = (l: string, v: string | null | undefined) => (v && v.trim() ? `- ${l}: ${v.trim()}` : "")
+
+// ---------------------------------------------------------------------------
+// OpenAI Responses API — helper inline
+// ---------------------------------------------------------------------------
+interface CallOpts {
+  instructions: string
+  input: string
+  json?: boolean
+  reasoningEffort?: "low" | "medium" | "high"
+  maxOutputTokens?: number
+}
+async function callResponses(o: CallOpts): Promise<
+  { ok: true; text: string; modelUsed: string } | { ok: false; status: number; error: string }
+> {
+  const chain = [OPENAI_TEXT_MODEL, ...TEXT_FALLBACKS.filter((m) => m !== OPENAI_TEXT_MODEL)]
+  let last = { status: 500, error: "no model tried" }
+  for (const model of chain) {
+    const isReasoning = /^(gpt-5|o\d)/i.test(model)
+    const body: Record<string, unknown> = { model, instructions: o.instructions, input: o.input }
+    if (isReasoning) body.reasoning = { effort: o.reasoningEffort ?? "low" }
+    if (o.json) body.text = { format: { type: "json_object" } }
+    if (o.maxOutputTokens) body.max_output_tokens = o.maxOutputTokens
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const text = typeof data?.output_text === "string" && data.output_text.length > 0
+        ? data.output_text
+        : extractOutputText(data?.output)
+      return { ok: true, text: String(text ?? ""), modelUsed: model }
+    }
+    const errText = await res.text().catch(() => "")
+    last = { status: res.status, error: errText.slice(0, 400) }
+    if (!/model|not found|does not exist|invalid_model|unsupported|does_not_exist/i.test(errText)) break
+  }
+  return { ok: false, ...last }
+}
+function extractOutputText(output: unknown): string {
+  if (!Array.isArray(output)) return ""
+  const parts: string[] = []
+  for (const item of output) {
+    const it = item as Record<string, unknown>
+    if (it?.type === "message" && Array.isArray(it.content)) {
+      for (const c of it.content as Array<Record<string, unknown>>) {
+        if (c?.type === "output_text" && typeof c.text === "string") parts.push(c.text)
+      }
+    }
+  }
+  return parts.join("")
+}
 
 interface Profile {
   first_name: string; last_name: string; job_title: string | null
@@ -64,31 +120,19 @@ Deno.serve(async (req) => {
   if (!pData) return json({ error: "Profil introuvable — complète ton onboarding." }, 404)
   const profile = pData as Profile
 
-  const system = platform === "fiverr"
+  const instructions = platform === "fiverr"
     ? "You are a Fiverr top-seller strategist. You know Fiverr's marketplace, gig conventions, buyer psychology, and pricing extremely well. Reply with valid JSON only."
     : "Tu es un expert de la marketplace ComeUp (ex-5euros.com). Tu connais parfaitement ses catégories, conventions de titres, la psychologie des acheteurs et les prix pratiqués. Réponds uniquement en JSON valide."
 
-  const userPrompt = platform === "fiverr"
+  const input = platform === "fiverr"
     ? `Freelance profile:\n${profileCtx(profile)}\n\nSuggest 8 to 10 winning gig ideas to sell on Fiverr, tailored to this profile. Return a JSON object with a "services" key whose value is an array of objects with EXACTLY these keys:\n- "title": gig title, MUST start with "${prefix}..." (Fiverr convention)\n- "category": Fiverr category (e.g. "Programming & Tech", "Graphics & Design", "Writing & Translation", "Digital Marketing", "Video & Animation", "Music & Audio")\n- "price_min": suggested minimum price in USD (integer)\n- "price_max": suggested maximum price in USD (integer)\n- "potential": "high" | "medium" | "low"\n- "rationale": 1-2 sentences on why this gig sells well on Fiverr`
     : `Profil du freelance:\n${profileCtx(profile)}\n\nPropose 8 à 10 idées de services gagnants pour vendre sur ComeUp, adaptés à ce profil. Renvoie un objet JSON avec une clé "services" contenant un tableau d'objets avec EXACTEMENT ces clés :\n- "title": titre du service, DOIT commencer par "${prefix}..." (convention ComeUp stricte)\n- "category": catégorie ComeUp (ex: "Programmation & Tech", "Design", "Rédaction & Traduction", "Marketing digital", "Vidéo & Animation", "Musique & Audio")\n- "price_min": prix minimum conseillé en euros (nombre entier)\n- "price_max": prix maximum conseillé en euros (nombre entier)\n- "potential": "high" | "medium" | "low"\n- "rationale": 1 à 2 phrases expliquant pourquoi ce service marche bien sur ComeUp`
 
-  const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: system }, { role: "user", content: userPrompt }],
-      response_format: { type: "json_object" },
-    }),
-  })
-  if (!aiRes.ok) {
-    const d = await aiRes.text().catch(() => "")
-    return json({ error: `Erreur OpenAI (${aiRes.status}): ${d.slice(0, 250)}` }, 502)
-  }
-  const completion = await aiRes.json()
-  const raw: string = completion?.choices?.[0]?.message?.content ?? ""
+  const result = await callResponses({ instructions, input, json: true, reasoningEffort: "low", maxOutputTokens: 3000 })
+  if (!result.ok) return json({ error: `Erreur OpenAI (${result.status}): ${result.error.slice(0, 300)}` }, 502)
+
   let parsed: Record<string, unknown>
-  try { parsed = JSON.parse(raw) } catch { return json({ error: "Réponse IA illisible, réessaie." }, 502) }
+  try { parsed = JSON.parse(result.text) } catch { return json({ error: "Réponse IA illisible, réessaie." }, 502) }
   const arr = Array.isArray(parsed.services) ? parsed.services
     : Array.isArray(parsed) ? parsed
     : (Object.values(parsed).find((v) => Array.isArray(v)) as unknown[] | undefined) ?? []
@@ -113,5 +157,5 @@ Deno.serve(async (req) => {
     updated_at: new Date().toISOString(),
   }).eq("user_id", user.id)
 
-  return json({ suggestions: inserted ?? [], credits_remaining: Math.max(0, remaining - 1) })
+  return json({ suggestions: inserted ?? [], credits_remaining: Math.max(0, remaining - 1), model_used: result.modelUsed })
 })

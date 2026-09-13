@@ -28,7 +28,7 @@ export function AdminLayout() {
             <ShieldCheck size={17} className="text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-sm font-bold tracking-tight text-white">Pipeline</p>
+            <p className="text-sm font-bold tracking-tight text-white">TopCloz</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-accent-400">Admin</p>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function AdminLayout() {
             <span className="rounded-full bg-accent-500 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide">
               Mode Admin
             </span>
-            <span className="text-sm text-ink-300">Back-office Pipeline</span>
+            <span className="text-sm text-ink-300">Back-office TopCloz</span>
           </div>
           <Link to="/dashboard" className="flex items-center gap-1.5 rounded border border-white/20 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10">
             <ArrowLeft size={13} />

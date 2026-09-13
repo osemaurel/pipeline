@@ -28,6 +28,33 @@ export interface PricingTier {
   features: string[]
 }
 
+export interface RawGeneration {
+  analysis?: {
+    positioning_angle?: string
+    top_objections?: string[]
+    top_motivations?: string[]
+  }
+  keywords?: {
+    primary?: string
+    secondary?: string[]
+    long_tail?: string[]
+  }
+  titles?: {
+    options?: string[] | string
+    recommended?: string
+    recommended_rationale?: string
+  }
+  pricing?: {
+    base_price?: number
+    base_currency?: string
+    options?: { name: string; price_addon: number; description: string }[]
+    strategy_note?: string
+  }
+  description_markdown?: string
+  faq?: FaqItem[]
+  thumbnail_concept?: string
+}
+
 export interface GeneratedService {
   id: string
   user_id: string
@@ -43,6 +70,7 @@ export interface GeneratedService {
   language: string
   thumbnail_url: string | null
   thumbnail_style_used: string | null
+  raw_generation_json: RawGeneration | null
   is_published: boolean
   created_at: string
   updated_at: string
@@ -150,6 +178,8 @@ export function generateThumbnail(input: {
   custom_style_prompt?: string
   primary_color?: string
   save_as_default?: boolean
+  inspiration_image_base64?: string
+  inspiration_image_mime?: string
 }) {
   return invoke<{ thumbnail_url: string; credits_remaining: number }>('generate-service-thumbnail', input)
 }

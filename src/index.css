@@ -50,3 +50,25 @@
     filter: brightness(0.9);
   }
 }
+
+/* Éditeur WYSIWYG Tiptap (aistudio) — styles du contenu édité */
+.markdown-editor-body .ProseMirror { min-height: 280px; outline: none; }
+.markdown-editor-body .ProseMirror h2 { @apply mt-5 mb-2 text-lg font-semibold text-ink-900; }
+.markdown-editor-body .ProseMirror h3 { @apply mt-4 mb-1.5 text-base font-semibold text-ink-800; }
+.markdown-editor-body .ProseMirror p { @apply my-2 text-sm leading-relaxed text-ink-700; }
+.markdown-editor-body .ProseMirror strong { @apply font-semibold text-ink-900; }
+.markdown-editor-body .ProseMirror em { @apply italic; }
+.markdown-editor-body .ProseMirror ul { @apply my-2 list-disc space-y-1 pl-5 text-sm text-ink-700; }
+.markdown-editor-body .ProseMirror ol { @apply my-2 list-decimal space-y-1 pl-5 text-sm text-ink-700; }
+.markdown-editor-body .ProseMirror table { @apply my-3 w-full border-collapse text-sm; }
+.markdown-editor-body .ProseMirror th { @apply border border-ink-100 bg-cream-100 px-3 py-2 text-left font-semibold text-ink-700; }
+.markdown-editor-body .ProseMirror td { @apply border border-ink-100 px-3 py-2 text-ink-700; }
+.markdown-editor-body .ProseMirror hr { @apply my-4 border-ink-100; }
+.markdown-editor-body .ProseMirror a { @apply text-accent-600 underline; }
+.markdown-editor-body .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: theme('colors.ink.300');
+  float: left;
+  pointer-events: none;
+  height: 0;
+}

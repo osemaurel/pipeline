@@ -174,7 +174,7 @@ export async function fetchUserActivity(userId: string): Promise<ActivityEvent[]
   for (const s of (gs.data ?? []) as { title: string; platform: string; created_at: string }[]) events.push({ type: 'service', label: `Service généré (${s.platform}) : ${s.title}`, at: s.created_at })
   for (const s of (ls.data ?? []) as { city: string; category: string; created_at: string }[]) events.push({ type: 'search', label: `Recherche : ${s.category} · ${s.city}`, at: s.created_at })
   for (const u of (up.data ?? []) as { job_title: string | null; created_at: string }[]) events.push({ type: 'proposal', label: `Candidature Upwork : ${u.job_title ?? '—'}`, at: u.created_at })
-  if (prof.data) events.push({ type: 'signup', label: 'Inscription sur Pipeline', at: (prof.data as { created_at: string }).created_at })
+  if (prof.data) events.push({ type: 'signup', label: 'Inscription sur TopCloz', at: (prof.data as { created_at: string }).created_at })
   return events.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 50)
 }
 
