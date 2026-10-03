@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { SUPPORT_EMAIL, useAuthStore } from '@/stores/authStore'
 
 export function LoginPage() {
@@ -88,11 +88,10 @@ export function LoginPage() {
         {loading ? 'Connexion...' : 'Se connecter'}
       </button>
 
-      <p className="text-center text-sm text-ink-500">
-        Pas encore de compte ?{' '}
-        <Link to="/signup" className="font-medium text-accent-600 hover:underline">
-          Créer un compte
-        </Link>
+      <p className="text-center text-xs leading-relaxed text-ink-400">
+        TopCloz est actuellement sur accès par invitation uniquement.
+        <br />
+        Si tu as reçu un email d'invitation, utilise le lien qu'il contient pour te connecter.
       </p>
     </form>
   )

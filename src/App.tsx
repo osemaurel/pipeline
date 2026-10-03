@@ -5,7 +5,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AuthLayout } from '@/components/AuthLayout'
 import { AppLayout } from '@/components/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
-import { SignupPage } from '@/pages/auth/SignupPage'
+// Inscription libre désactivée : les comptes sont pré-créés par l'admin via
+// l'edge function send-invite. Ancien SignupPage conservé dans le repo
+// (src/pages/auth/SignupPage.tsx) pour réactivation future quand on ajoutera
+// la landing page + flow de paiement.
 import { OnboardingPage } from '@/pages/OnboardingPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
@@ -67,7 +70,8 @@ export default function App() {
 
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        {/* Redirection : plus de signup libre pour l'instant → page de connexion */}
+        <Route path="/signup" element={<Navigate to="/login" replace />} />
       </Route>
 
       <Route
