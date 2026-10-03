@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BookOpen,
   LayoutDashboard,
+  Mail,
   ScrollText,
   ShieldCheck,
   Users,
@@ -13,6 +14,7 @@ import { useAuthStore } from '@/stores/authStore'
 const nav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users, end: false },
+  { to: '/admin/invites', label: 'Invitations', icon: Mail, end: false },
   { to: '/admin/resources', label: 'Ressources', icon: BookOpen, end: false },
   { to: '/admin/activity', label: 'Activité', icon: Activity, end: false },
   { to: '/admin/logs', label: 'Logs', icon: ScrollText, end: false },
