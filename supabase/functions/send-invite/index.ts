@@ -178,7 +178,10 @@ Deno.serve(async (req) => {
   if (!userId) {
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email, email_confirm: true,
-      user_metadata: firstName ? { first_name: firstName } : {},
+      user_metadata: {
+        needs_password_setup: true,
+        ...(firstName ? { first_name: firstName } : {}),
+      },
     })
     if (createErr) {
       const { data: all } = await admin.auth.admin.listUsers({ perPage: 1000 })

@@ -29,6 +29,7 @@ import { AdminActivityPage } from '@/pages/admin/AdminActivityPage'
 import { AdminLogsPage } from '@/pages/admin/AdminLogsPage'
 import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
+import { SetPasswordPage } from '@/pages/auth/SetPasswordPage'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -72,6 +73,14 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         {/* Redirection : plus de signup libre pour l'instant → page de connexion */}
         <Route path="/signup" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/set-password"
+          element={
+            <ProtectedRoute requireOnboarding={false}>
+              <SetPasswordPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route

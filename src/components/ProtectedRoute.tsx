@@ -16,6 +16,14 @@ export function ProtectedRoute({ children, requireOnboarding = true }: Props) {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 
+  // Invité qui vient d'arriver via magic link : doit d'abord définir
+  // son mot de passe pour pouvoir se reconnecter plus tard.
+  const needsPasswordSetup =
+    (user.user_metadata as Record<string, unknown> | undefined)?.needs_password_setup === true
+  if (needsPasswordSetup && location.pathname !== '/set-password') {
+    return <Navigate to="/set-password" replace />
+  }
+
   if (requireOnboarding && profile && !profile.onboarding_completed) {
     return <Navigate to="/onboarding" replace />
   }
