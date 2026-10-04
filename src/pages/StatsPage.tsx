@@ -64,21 +64,22 @@ export function StatsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">
             Statistiques
           </h1>
           <p className="mt-1 text-sm text-ink-500">
             Ce que tu peux mesurer, tu peux l'améliorer.
           </p>
         </div>
-        <div className="flex overflow-hidden rounded border border-ink-200">
+        <div className="grid w-full grid-cols-3 overflow-hidden rounded border border-ink-200 sm:flex sm:w-auto">
           {([7, 30, 90] as PeriodDays[]).map((d) => (
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`px-3 py-2 text-sm transition ${
+              aria-pressed={days === d}
+              className={`px-3 py-2.5 text-sm transition sm:py-2 ${
                 days === d
                   ? 'bg-ink-900 text-white'
                   : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
@@ -90,7 +91,7 @@ export function StatsPage() {
         </div>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <section className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-4">
         <StatCard
           label="Prospects actifs"
           value={loading ? '—' : fmt(data?.kpis.activeProspects ?? 0)}
@@ -121,7 +122,7 @@ export function StatsPage() {
         />
       </section>
 
-      <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <section className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 md:grid-cols-4">
         <StatCard
           label="Prospects perdus"
           value={loading ? '—' : fmt(data?.kpis.lostProspects ?? 0)}
@@ -213,7 +214,7 @@ export function StatsPage() {
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <section className="card">
           <div className="mb-4 flex items-center gap-2">
             <BarChart3 size={16} className="text-ink-400" />
@@ -322,7 +323,7 @@ export function StatsPage() {
         </section>
       </div>
 
-      <section className="card mt-6">
+      <section className="card mt-4 sm:mt-6">
         <div className="mb-4 flex items-center gap-2">
           <Trophy size={16} className="text-accent-500" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
@@ -346,10 +347,13 @@ export function StatsPage() {
                     <p className="truncate text-sm font-medium text-ink-800">
                       {p.name}
                     </p>
-                    <p className="truncate text-xs text-ink-500">{p.company}</p>
+                    <p className="truncate text-xs text-ink-500">
+                      {p.company}
+                      <span className="sm:hidden"> · {s.label}</span>
+                    </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${s.color}`}
+                    className={`hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium sm:inline ${s.color}`}
                   >
                     {s.label}
                   </span>

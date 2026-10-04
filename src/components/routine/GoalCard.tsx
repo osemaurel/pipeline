@@ -29,8 +29,9 @@ export function GoalCard({ goal, onIncrement, onArchive }: Props) {
         </div>
         <button
           onClick={onArchive}
-          className="shrink-0 text-ink-300 hover:text-danger-500"
+          className="-m-2 flex h-10 w-10 shrink-0 items-center justify-center text-ink-300 hover:text-danger-500 sm:h-8 sm:w-8"
           title="Archiver l'objectif"
+          aria-label="Archiver l'objectif"
         >
           <Archive size={14} />
         </button>
@@ -69,13 +70,15 @@ export function GoalCard({ goal, onIncrement, onArchive }: Props) {
       <div className="mt-3 flex gap-1.5">
         <button
           onClick={() => onIncrement(-1)}
-          className="flex h-7 flex-1 items-center justify-center rounded border border-ink-200 text-ink-500 transition hover:bg-ink-100"
+          aria-label="Retirer 1"
+          className="flex h-10 flex-1 items-center justify-center rounded border border-ink-200 active:scale-95 sm:h-7 text-ink-500 transition hover:bg-ink-100"
         >
           <Minus size={12} />
         </button>
         <button
           onClick={() => onIncrement(1)}
-          className="flex h-7 flex-1 items-center justify-center rounded border border-accent-500 bg-accent-500/10 text-accent-700 transition hover:bg-accent-500 hover:text-white"
+          aria-label="Ajouter 1"
+          className="flex h-10 flex-1 items-center justify-center rounded border border-accent-500 active:scale-95 sm:h-7 bg-accent-500/10 text-accent-700 transition hover:bg-accent-500 hover:text-white"
         >
           <Plus size={12} />
         </button>

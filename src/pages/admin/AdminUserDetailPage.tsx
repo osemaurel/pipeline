@@ -42,38 +42,38 @@ export function AdminUserDetailPage() {
       )}
 
       <header className="card mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="h-14 w-14 rounded-full object-cover" />
+            <img src={profile.avatar_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
           ) : (
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-cream-200 text-lg font-semibold text-ink-500">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-cream-200 text-lg font-semibold text-ink-500">
               {profile.first_name.slice(0, 1)}{profile.last_name.slice(0, 1)}
             </span>
           )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-ink-900">{profile.first_name} {profile.last_name}</h1>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h1 className="text-lg font-semibold text-ink-900 sm:text-xl">{profile.first_name} {profile.last_name}</h1>
               <StatusBadge suspended={profile.is_suspended} paid={profile.has_paid} />
             </div>
-            <p className="text-sm text-ink-500">{profile.email}</p>
+            <p className="truncate text-sm text-ink-500">{profile.email}</p>
             <p className="text-xs text-ink-400">Crédits restants : <span className="font-mono font-semibold text-ink-700">{credits ?? '—'}</span></p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <button onClick={() => setModal('add')} className="btn-secondary text-xs"><PlusCircle size={13} />Ajouter crédits</button>
           <button onClick={() => setModal('remove')} className="btn-secondary text-xs"><MinusCircle size={13} />Retirer crédits</button>
           {profile.is_suspended ? (
-            <button onClick={async () => { await unsuspendUser(id); setToast('Compte réactivé.'); reload() }} className="inline-flex items-center gap-1.5 rounded border border-success-200 bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 hover:bg-success-100"><RotateCcw size={13} />Réactiver</button>
+            <button onClick={async () => { await unsuspendUser(id); setToast('Compte réactivé.'); reload() }} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded border border-success-200 sm:min-h-0 bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 hover:bg-success-100"><RotateCcw size={13} />Réactiver</button>
           ) : (
-            <button onClick={() => setModal('suspend')} className="inline-flex items-center gap-1.5 rounded border border-danger-200 bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-700 hover:bg-danger-100"><Ban size={13} />Suspendre</button>
+            <button onClick={() => setModal('suspend')} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded border border-danger-200 sm:min-h-0 bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-700 hover:bg-danger-100"><Ban size={13} />Suspendre</button>
           )}
           <a href={`mailto:${profile.email}`} className="btn-secondary text-xs"><Mail size={13} />Email</a>
         </div>
       </header>
 
-      <div className="mb-4 flex gap-4 border-b border-ink-200">
+      <div className="no-scrollbar -mx-4 mb-4 flex gap-5 overflow-x-auto border-b border-ink-200 px-4 sm:mx-0 sm:gap-4 sm:px-0">
         {(['profil', 'activite', 'contenu', 'historique'] as Tab[]).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`border-b-2 px-1 py-2.5 text-sm font-medium capitalize transition ${tab === t ? 'border-accent-500 text-ink-900' : 'border-transparent text-ink-400 hover:text-ink-700'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`shrink-0 whitespace-nowrap border-b-2 px-1 py-3 sm:py-2.5 text-sm font-medium capitalize transition ${tab === t ? 'border-accent-500 text-ink-900' : 'border-transparent text-ink-400 hover:text-ink-700'}`}>
             {t === 'activite' ? 'Activité' : t === 'historique' ? 'Historique admin' : t}
           </button>
         ))}
@@ -99,9 +99,9 @@ export function AdminUserDetailPage() {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-4 border-b border-ink-100 py-2 last:border-0">
-      <div className="w-44 shrink-0 text-sm text-ink-400">{label}</div>
-      <div className="text-sm text-ink-800">{value || <span className="text-ink-300">—</span>}</div>
+    <div className="flex flex-col gap-0.5 border-b border-ink-100 py-2.5 last:border-0 sm:flex-row sm:gap-4 sm:py-2">
+      <div className="text-xs text-ink-400 sm:w-44 sm:shrink-0 sm:text-sm">{label}</div>
+      <div className="min-w-0 break-words text-sm text-ink-800">{value || <span className="text-ink-300">—</span>}</div>
     </div>
   )
 }
@@ -274,8 +274,8 @@ function ActionModal({ kind, userId, userName, onClose, onDone }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/40 p-4 backdrop-blur-sm">
-      <form onSubmit={submit} className="mt-16 w-full max-w-md rounded-lg border border-ink-100 bg-cream-50 shadow-lg">
+    <div className="modal-overlay">
+      <form onSubmit={submit} className="modal-panel max-w-md sm:mt-16">
         <header className="flex items-center justify-between border-b border-ink-100 p-4">
           <div className="flex items-center gap-2">
             <Icon size={18} className={kind === 'suspend' ? 'text-danger-600' : 'text-accent-600'} />

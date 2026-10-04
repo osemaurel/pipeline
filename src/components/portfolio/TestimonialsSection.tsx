@@ -102,7 +102,8 @@ export function TestimonialsSection({ userId, testimonials, onChange }: Props) {
               </p>
               <button
                 onClick={() => startEdit(t)}
-                className="shrink-0 text-ink-400 hover:text-accent-600"
+                className="-m-2 flex h-10 w-10 shrink-0 items-center justify-center rounded text-ink-400 hover:text-accent-600 sm:h-8 sm:w-8"
+                aria-label="Modifier"
               >
                 <Edit3 size={14} />
               </button>

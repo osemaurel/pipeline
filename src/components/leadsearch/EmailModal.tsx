@@ -65,8 +65,8 @@ export function EmailModal({ userId, result, onClose, onSent }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/30 p-4 backdrop-blur-sm sm:p-6">
-      <div className="mt-6 w-full max-w-xl rounded-lg border border-ink-100 bg-cream-50 shadow-lg">
+    <div className="modal-overlay">
+      <div className="modal-panel max-w-xl">
         <header className="flex items-start justify-between gap-3 border-b border-ink-100 p-5">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-500/10 text-accent-600">

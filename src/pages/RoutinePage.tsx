@@ -131,12 +131,12 @@ export function RoutinePage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="mb-6 flex items-end justify-between">
-        <div>
-          <p className="text-sm text-ink-400">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-2 sm:mb-6">
+        <div className="min-w-0">
+          <p className="text-sm capitalize text-ink-400">
             {format(new Date(), 'EEEE d MMMM', { locale: fr })}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink-900">
+          <h1 className="mt-1 text-xl font-semibold text-ink-900 sm:text-2xl">
             Ma routine
           </h1>
           <p className="mt-1 text-sm text-ink-500">
@@ -152,23 +152,26 @@ export function RoutinePage() {
         <div className="h-64 animate-pulse rounded-lg bg-cream-100" />
       ) : (
         <>
-          <section className="card mb-6">
-            <div className="mb-4 flex items-center justify-between">
+          <section className="card mb-4 sm:mb-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Sun size={16} className="text-accent-500" />
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
                   Aujourd'hui
                 </h2>
+                <span className="font-mono text-sm text-ink-500 sm:hidden">
+                  · {totalActivity} actions
+                </span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm text-ink-500">
+              <div className="flex w-full items-center gap-3 sm:w-auto">
+                <span className="hidden font-mono text-sm text-ink-500 sm:inline">
                   {totalActivity} actions
                 </span>
                 <button
                   onClick={closeDay}
-                  className={
+                  className={`w-full sm:w-auto ${
                     routine.closed_at ? 'btn-secondary' : 'btn-primary'
-                  }
+                  }`}
                 >
                   {routine.closed_at ? (
                     <>Rouvrir la journée</>
@@ -187,7 +190,7 @@ export function RoutinePage() {
                 type="checkbox"
                 checked={routine.linkedin_post_done}
                 onChange={(e) => patch({ linkedin_post_done: e.target.checked })}
-                className="mt-0.5 h-4 w-4 accent-[#7F56D9]"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#7F56D9] sm:h-4 sm:w-4"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-sm font-medium text-ink-800">
@@ -247,8 +250,8 @@ export function RoutinePage() {
             </div>
           </section>
 
-          <section className="card mb-6">
-            <div className="mb-4 flex items-center justify-between">
+          <section className="card mb-4 sm:mb-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Target size={16} className="text-accent-500" />
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">

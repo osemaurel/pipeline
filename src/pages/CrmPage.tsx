@@ -101,20 +101,29 @@ export function CrmPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">CRM</h1>
+      <header className="mb-5 flex items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">CRM</h1>
           <p className="mt-1 text-sm text-ink-500">
             Tes prospects, ton pipeline, ton pouls commercial.
           </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary">
+        <button onClick={() => setShowAdd(true)} className="btn-primary hidden shrink-0 sm:inline-flex">
           <Plus size={14} />
           Ajouter un prospect
         </button>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* Mobile : bouton d'action flottant, au-dessus de la barre d'onglets */}
+      <button
+        onClick={() => setShowAdd(true)}
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg shadow-accent-500/30 transition active:scale-95 sm:hidden"
+        aria-label="Ajouter un prospect"
+      >
+        <Plus size={24} />
+      </button>
+
+      <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 md:grid-cols-4">
         <MiniStat label="Actifs" value={stats.active} />
         <MiniStat label="Gagnés" value={stats.won} />
         <MiniStat label="Total" value={stats.total} />
@@ -125,32 +134,7 @@ export function CrmPage() {
       </section>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded border border-ink-200">
-          <button
-            onClick={() => setView('list')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm transition ${
-              view === 'list'
-                ? 'bg-ink-900 text-white'
-                : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
-            }`}
-          >
-            <List size={14} />
-            Liste
-          </button>
-          <button
-            onClick={() => setView('kanban')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm transition ${
-              view === 'kanban'
-                ? 'bg-ink-900 text-white'
-                : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
-            }`}
-          >
-            <KanbanSquare size={14} />
-            Pipeline
-          </button>
-        </div>
-
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative order-first w-full sm:order-none sm:w-auto sm:min-w-[200px] sm:flex-1">
           <Search
             size={14}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-300"
@@ -163,8 +147,33 @@ export function CrmPage() {
           />
         </div>
 
+        <div className="flex shrink-0 overflow-hidden rounded border border-ink-200">
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-sm transition sm:py-2 ${
+              view === 'list'
+                ? 'bg-ink-900 text-white'
+                : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
+            }`}
+          >
+            <List size={14} />
+            Liste
+          </button>
+          <button
+            onClick={() => setView('kanban')}
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-sm transition sm:py-2 ${
+              view === 'kanban'
+                ? 'bg-ink-900 text-white'
+                : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
+            }`}
+          >
+            <KanbanSquare size={14} />
+            Pipeline
+          </button>
+        </div>
+
         <select
-          className="input max-w-[180px]"
+          className="input min-w-0 flex-1 sm:max-w-[180px] sm:flex-none"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -179,7 +188,8 @@ export function CrmPage() {
 
         <button
           onClick={() => setFavoritesOnly((v) => !v)}
-          className={`flex items-center gap-1 rounded border px-3 py-2 text-sm transition ${
+          aria-pressed={favoritesOnly}
+          className={`flex shrink-0 items-center gap-1 rounded border px-3 py-2.5 text-sm transition sm:py-2 ${
             favoritesOnly
               ? 'border-accent-500 bg-accent-500/10 text-accent-700'
               : 'border-ink-200 text-ink-500 hover:bg-cream-100'
@@ -228,8 +238,8 @@ export function CrmPage() {
       )}
 
       {showAdd && user && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/20 p-6 backdrop-blur-sm">
-          <div className="mt-8 w-full max-w-2xl rounded-lg bg-cream-50 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-ink-900/20 backdrop-blur-sm sm:p-6">
+          <div className="min-h-[100dvh] w-full max-w-2xl bg-cream-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-2xl sm:mt-8 sm:min-h-0 sm:rounded-lg sm:p-6">
             <ProspectForm
               userId={user.id}
               onSaved={(p) => {
@@ -254,9 +264,9 @@ function MiniStat({
   value: string | number
 }) {
   return (
-    <div className="card !p-4">
-      <p className="text-xs uppercase tracking-wide text-ink-400">{label}</p>
-      <p className="mt-1 font-mono text-2xl font-semibold text-ink-900">{value}</p>
+    <div className="card min-w-0 !p-3 sm:!p-4">
+      <p className="truncate text-[11px] uppercase tracking-wide text-ink-400 sm:text-xs">{label}</p>
+      <p className="mt-1 truncate font-mono text-xl font-semibold text-ink-900 sm:text-2xl">{value}</p>
     </div>
   )
 }

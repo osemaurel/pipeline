@@ -127,9 +127,9 @@ export function LeadSearchPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">
             Recherche de prospects
           </h1>
           <p className="mt-1 text-sm text-ink-500">
@@ -193,16 +193,18 @@ export function LeadSearchPage() {
           </div>
         </div>
 
-        <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-700">
+        <label className="mt-4 flex cursor-pointer items-start gap-2.5 py-1 text-sm text-ink-700 sm:w-fit sm:items-center">
           <input
             type="checkbox"
             checked={excludeWithWebsite}
             onChange={(e) => setExcludeWithWebsite(e.target.checked)}
-            className="h-4 w-4 accent-[#7F56D9]"
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[#7F56D9] sm:mt-0 sm:h-4 sm:w-4"
           />
-          Sans site web uniquement
-          <span className="text-xs text-ink-400">
-            (les meilleurs prospects pour une prestation web)
+          <span>
+            Sans site web uniquement{' '}
+            <span className="block text-xs text-ink-400 sm:inline">
+              (les meilleurs prospects pour une prestation web)
+            </span>
           </span>
         </label>
 
@@ -232,12 +234,25 @@ export function LeadSearchPage() {
       ) : results.length > 0 ? (
         <section className="card overflow-hidden !p-0">
           {lastSearchLabel && (
-            <div className="flex items-center gap-2 border-b border-ink-100 px-5 py-3 text-sm text-ink-500">
-              <Building2 size={15} className="text-ink-400" />
-              {lastSearchLabel}
+            <div className="flex items-start gap-2 border-b border-ink-100 px-4 py-3 text-sm text-ink-500 sm:items-center sm:px-5">
+              <Building2 size={15} className="mt-0.5 shrink-0 text-ink-400 sm:mt-0" />
+              <span className="min-w-0">{lastSearchLabel}</span>
             </div>
           )}
-          <div className="overflow-x-auto">
+          {/* Mobile : cartes empilées (un tableau 5 colonnes est illisible au téléphone) */}
+          <ul className="divide-y divide-ink-100 md:hidden">
+            {results.map((r) => (
+              <ResultCard
+                key={r.id}
+                result={r}
+                busy={busyRow === r.id}
+                onEmail={() => setEmailTarget(r)}
+                onWhatsApp={() => onWhatsApp(r)}
+                onAddToCrm={() => onAddToCrm(r)}
+              />
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wide text-ink-400">
@@ -307,9 +322,10 @@ export function LeadSearchPage() {
                 </div>
                 <button
                   onClick={() => openHistory(s)}
-                  className="shrink-0 text-xs font-medium text-accent-600 hover:underline"
+                  className="-my-2 shrink-0 py-2 text-xs font-medium text-accent-600 hover:underline"
                 >
-                  Revoir les résultats
+                  <span className="sm:hidden">Revoir</span>
+                  <span className="hidden sm:inline">Revoir les résultats</span>
                 </button>
               </li>
             ))}
@@ -347,6 +363,93 @@ function CreditsBadge({ credits }: { credits: number | null }) {
         crédit{credits === 1 ? '' : 's'} restant{credits === 1 ? '' : 's'}
       </span>
     </div>
+  )
+}
+
+function ResultCard({
+  result: r,
+  busy,
+  onEmail,
+  onWhatsApp,
+  onAddToCrm,
+}: {
+  result: LeadResult
+  busy: boolean
+  onEmail: () => void
+  onWhatsApp: () => void
+  onAddToCrm: () => void
+}) {
+  const inCrm = !!r.converted_to_prospect_id
+  return (
+    <li className={`px-4 py-4 ${r.contacted ? 'bg-cream-100/60' : ''}`}>
+      <div className="flex items-start gap-2">
+        {r.contacted && <Check size={15} className="mt-0.5 shrink-0 text-success-500" />}
+        <div className="min-w-0 flex-1">
+          <p className={`font-semibold ${r.contacted ? 'text-ink-500' : 'text-ink-900'}`}>
+            {r.business_name}
+          </p>
+          {r.contacted ? (
+            <p className="text-xs text-ink-400">
+              Contacté ({r.contact_method === 'whatsapp' ? 'WhatsApp' : 'email'})
+            </p>
+          ) : (
+            inCrm && <p className="text-xs text-accent-600">Ajouté au CRM</p>
+          )}
+        </div>
+      </div>
+
+      <dl className="mt-2 space-y-1 text-sm">
+        {r.owner_name && (
+          <div className="flex gap-2">
+            <dt className="w-20 shrink-0 text-ink-400">Dirigeant</dt>
+            <dd className="min-w-0 text-ink-700">{r.owner_name}</dd>
+          </div>
+        )}
+        {r.phone && (
+          <div className="flex gap-2">
+            <dt className="w-20 shrink-0 text-ink-400">Téléphone</dt>
+            <dd className="min-w-0">
+              <a href={`tel:${r.phone.replace(/\s+/g, '')}`} className="text-accent-600 underline-offset-2 active:underline">
+                {r.phone}
+              </a>
+            </dd>
+          </div>
+        )}
+        {r.address && (
+          <div className="flex gap-2">
+            <dt className="w-20 shrink-0 text-ink-400">Adresse</dt>
+            <dd className="min-w-0 text-ink-600">{r.address}</dd>
+          </div>
+        )}
+      </dl>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <button
+          onClick={onEmail}
+          disabled={busy}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink-200 bg-cream-50 text-xs font-semibold text-ink-700 transition active:bg-cream-200 disabled:opacity-40"
+        >
+          <Mail size={15} />
+          Email
+        </button>
+        <button
+          onClick={onWhatsApp}
+          disabled={busy || !r.phone}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink-200 bg-cream-50 text-xs font-semibold text-ink-700 transition active:bg-cream-200 disabled:opacity-40"
+        >
+          <MessageCircle size={15} />
+          WhatsApp
+        </button>
+        <button
+          onClick={onAddToCrm}
+          disabled={busy || inCrm}
+          className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-ink-200 bg-cream-50 text-xs font-semibold text-ink-700 transition active:bg-cream-200 disabled:opacity-40"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={15} />}
+          {inCrm ? 'Ajouté' : 'CRM'}
+        </button>
+      </div>
+    </li>
   )
 }
 

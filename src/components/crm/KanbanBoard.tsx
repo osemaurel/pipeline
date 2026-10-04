@@ -41,7 +41,13 @@ export function KanbanBoard({ prospects, onOpen, onMove }: Props) {
   }))
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <>
+    {/* Le glisser-déposer HTML5 ne fonctionne pas au doigt : sur mobile on
+        change l'étape depuis la fiche du prospect. */}
+    <p className="mb-2 text-xs text-ink-400 sm:hidden">
+      Glisse horizontalement pour voir les étapes · touche une fiche pour changer son étape.
+    </p>
+    <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4 pb-4 sm:mx-0 sm:snap-none sm:px-0">
       {grouped.map((col) => (
         <div
           key={col.value}
@@ -51,7 +57,7 @@ export function KanbanBoard({ prospects, onOpen, onMove }: Props) {
           }}
           onDragLeave={() => setOverStage(null)}
           onDrop={(e) => onDrop(e, col.value)}
-          className={`flex w-72 shrink-0 flex-col rounded-lg border p-3 transition ${
+          className={`flex w-[82vw] max-w-[18rem] shrink-0 snap-start flex-col rounded-lg border p-3 transition sm:w-72 ${
             overStage === col.value
               ? 'border-accent-500 bg-accent-500/5'
               : 'border-ink-100 bg-cream-50'
@@ -112,5 +118,6 @@ export function KanbanBoard({ prospects, onOpen, onMove }: Props) {
         </div>
       ))}
     </div>
+    </>
   )
 }

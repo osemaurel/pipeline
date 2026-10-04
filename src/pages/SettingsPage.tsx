@@ -21,16 +21,20 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-ink-900">Paramètres</h1>
+      <header className="mb-5 sm:mb-6">
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Paramètres</h1>
         <p className="mt-1 text-sm text-ink-500">
           Tout ce qui personnalise ton expérience et alimente ton portfolio + le
           générateur IA.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
-        <nav className="flex flex-col gap-1">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-[220px_1fr]">
+        {/* Mobile : onglets en ligne défilante — Desktop : menu vertical */}
+        <nav
+          aria-label="Sections des paramètres"
+          className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-col md:gap-1 md:overflow-visible md:px-0"
+        >
           {TABS.map((t) => {
             const Icon = t.icon
             const active = tab === t.value
@@ -38,10 +42,11 @@ export function SettingsPage() {
               <button
                 key={t.value}
                 onClick={() => setTab(t.value)}
-                className={`flex items-center gap-2 rounded px-3 py-2 text-left text-sm transition ${
+                aria-current={active ? 'page' : undefined}
+                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-left text-sm transition md:rounded md:border-0 md:px-3 md:py-2 ${
                   active
-                    ? 'bg-accent-500/10 text-accent-700 font-medium'
-                    : 'text-ink-600 hover:bg-cream-100'
+                    ? 'border-accent-500 bg-accent-500/10 font-medium text-accent-700'
+                    : 'border-ink-100 bg-cream-50 text-ink-600 hover:bg-cream-100 md:bg-transparent'
                 }`}
               >
                 <Icon size={16} />

@@ -103,13 +103,14 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         <button
           type="button"
           onClick={onCancel}
-          className="text-ink-400 hover:text-ink-800"
+          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-ink-400 hover:text-ink-800 active:bg-cream-200"
+          aria-label="Fermer"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Prénom</label>
           <input
@@ -140,7 +141,7 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Poste</label>
           <input
@@ -159,7 +160,7 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Email</label>
           <input
@@ -179,7 +180,7 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Étape</label>
           <select
@@ -210,7 +211,7 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">
             Priorité — {PRIORITY_LABELS[draft.priority]}
@@ -267,20 +268,20 @@ export function ProspectForm({ userId, prospect, onSaved, onDeleted, onCancel }:
         </p>
       )}
 
-      <div className="flex items-center justify-between border-t border-ink-100 pt-4">
+      <div className="flex flex-col-reverse gap-3 border-t border-ink-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
         {prospect ? (
           <button
             type="button"
             onClick={remove}
-            className="flex items-center gap-1 text-xs font-medium text-danger-600 hover:underline"
+            className="flex items-center justify-center gap-1 py-2 text-xs font-medium text-danger-600 hover:underline sm:justify-start sm:py-0"
           >
             <Trash2 size={13} />
             Supprimer
           </button>
         ) : (
-          <span />
+          <span className="hidden sm:block" />
         )}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <button type="button" onClick={onCancel} className="btn-secondary">
             Annuler
           </button>

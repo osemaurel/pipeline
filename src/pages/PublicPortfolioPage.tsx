@@ -117,7 +117,7 @@ export function PublicPortfolioPage() {
       className={`portfolio-accent ${dark ? 'dark' : ''}`}
       style={{ ['--accent' as string]: accent }}
     >
-      <div className="min-h-screen scroll-smooth bg-white text-ink-900 transition-colors dark:bg-[#0A0D12] dark:text-white">
+      <div className="min-h-[100dvh] scroll-smooth bg-white text-ink-900 transition-colors dark:bg-[#0A0D12] dark:text-white">
         {/* ------------------------------------------------ Navbar */}
         <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur-md dark:border-ink-800 dark:bg-[#0A0D12]/80">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
@@ -153,7 +153,8 @@ export function PublicPortfolioPage() {
             <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={toggleTheme}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-200 text-ink-500 transition hover:bg-cream-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
+                aria-label={dark ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-200 text-ink-500 sm:h-9 sm:w-9 transition hover:bg-cream-100 dark:border-ink-700 dark:text-ink-300 dark:hover:bg-ink-800"
                 title={dark ? 'Mode clair' : 'Mode sombre'}
               >
                 {dark ? <Sun size={15} /> : <Moon size={15} />}
@@ -172,21 +173,21 @@ export function PublicPortfolioPage() {
 
         <main id="top" className="mx-auto max-w-6xl px-5">
           {/* ------------------------------------------------ Hero */}
-          <section className="grid grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:py-20">
-            <div>
+          <section className="grid grid-cols-1 items-center gap-8 py-8 sm:gap-10 sm:py-14 md:grid-cols-2 md:py-20">
+            <div className="min-w-0">
               {portfolio.is_available && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-ink-100 bg-cream-100 px-4 py-2 text-sm text-ink-700 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-300">
+                <span className="inline-flex items-center gap-2 rounded-full border border-ink-100 bg-cream-100 px-3.5 py-1.5 text-xs text-ink-700 sm:px-4 sm:py-2 sm:text-sm dark:border-ink-800 dark:bg-ink-900 dark:text-ink-300">
                   <span className="h-2 w-2 animate-pulse-dot rounded-full bg-success-500" />
                   Disponible pour de nouveaux projets
                 </span>
               )}
 
-              <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
+              <h1 className="mt-5 break-words text-4xl font-semibold leading-[1.05] tracking-tight sm:mt-6 sm:text-5xl md:text-6xl">
                 {owner?.job_title ?? displayName}
                 <span style={{ color: 'var(--accent)' }}>.</span>
               </h1>
 
-              <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-500 dark:text-ink-300">
+              <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-500 dark:text-ink-300 sm:mt-6 sm:text-lg">
                 Salut, je suis {displayName}.{' '}
                 {portfolio.headline ?? "Bienvenue sur mon portfolio."}
               </p>
@@ -196,16 +197,16 @@ export function PublicPortfolioPage() {
                 </p>
               )}
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-7 grid grid-cols-2 gap-3 sm:mt-8 sm:flex sm:flex-wrap sm:items-center">
                 <a
                   href="#projets"
-                  className="inline-flex items-center gap-2 rounded-full border border-ink-200 px-5 py-2.5 text-sm font-semibold text-ink-800 transition hover:bg-cream-100 dark:border-ink-700 dark:text-white dark:hover:bg-ink-800"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-ink-200 px-5 py-3 text-sm font-semibold sm:py-2.5 text-ink-800 transition hover:bg-cream-100 dark:border-ink-700 dark:text-white dark:hover:bg-ink-800"
                 >
                   Voir mes projets
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-90"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition hover:brightness-90 sm:py-2.5"
                   style={{ backgroundColor: 'var(--accent)' }}
                 >
                   Me contacter
@@ -247,11 +248,12 @@ export function PublicPortfolioPage() {
             </div>
 
             {portfolio.photo_url && (
-              <div>
+              // Mobile : photo en premier, plus compacte, pour un hero "profil" immédiat
+              <div className="order-first md:order-none">
                 <img
                   src={portfolio.photo_url}
                   alt={displayName}
-                  className="aspect-[4/5] w-full rounded-3xl object-cover"
+                  className="aspect-square w-full rounded-3xl object-cover sm:aspect-[4/5]"
                 />
               </div>
             )}
@@ -259,7 +261,7 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Outils */}
           {tools.length > 0 && (
-            <section id="outils" className="scroll-mt-24 py-16 md:py-24">
+            <section id="outils" className="scroll-mt-20 py-12 sm:py-16 md:py-24">
               <SectionHeading
                 eyebrow="Stack"
                 title="Les outils que j'utilise"
@@ -289,13 +291,13 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Projets */}
           {projects.length > 0 && (
-            <section id="projets" className="scroll-mt-24 py-16 md:py-24">
+            <section id="projets" className="scroll-mt-20 py-12 sm:py-16 md:py-24">
               <SectionHeading
                 eyebrow="Projets"
                 title="Mes réalisations"
                 subtitle="Un aperçu de projets qui montrent comment je transforme des idées en résultats concrets"
               />
-              <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-2">
+              <div className="mt-8 grid grid-cols-1 gap-8 sm:mt-12 sm:gap-10 md:grid-cols-2">
                 {projects.map((p) => (
                   <article key={p.id} className="group">
                     {p.image_url ? (
@@ -338,7 +340,7 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Expérience */}
           {experiences.length > 0 && (
-            <section id="experience" className="scroll-mt-24 py-16 md:py-24">
+            <section id="experience" className="scroll-mt-20 py-12 sm:py-16 md:py-24">
               <SectionHeading
                 eyebrow="Expérience"
                 title="Mon parcours"
@@ -348,10 +350,10 @@ export function PublicPortfolioPage() {
                 {experiences.map((x) => (
                   <article
                     key={x.id}
-                    className="rounded-3xl border border-ink-100 bg-cream-100/60 p-7 dark:border-ink-800 dark:bg-ink-900/60 md:p-9"
+                    className="rounded-3xl border border-ink-100 bg-cream-100/60 p-5 dark:border-ink-800 dark:bg-ink-900/60 sm:p-7 md:p-9"
                   >
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <h3 className="text-lg font-semibold md:text-xl">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-2">
+                      <h3 className="text-base font-semibold sm:text-lg md:text-xl">
                         {x.role} — {x.company}
                       </h3>
                       <span className="font-mono text-sm text-ink-400">
@@ -396,7 +398,7 @@ export function PublicPortfolioPage() {
 
           {/* ------------------------------------------------ Témoignages */}
           {testimonials.length > 0 && (
-            <section id="temoignages" className="scroll-mt-24 py-16 md:py-24">
+            <section id="temoignages" className="scroll-mt-20 py-12 sm:py-16 md:py-24">
               <SectionHeading
                 eyebrow="Témoignages"
                 title="Ils me font confiance"
@@ -412,8 +414,8 @@ export function PublicPortfolioPage() {
           )}
 
           {/* ------------------------------------------------ Contact */}
-          <section id="contact" className="scroll-mt-24 py-16 md:py-24">
-            <div className="relative overflow-hidden rounded-3xl bg-ink-900 px-6 py-20 text-center dark:bg-ink-900 md:py-28">
+          <section id="contact" className="scroll-mt-20 py-12 sm:py-16 md:py-24">
+            <div className="relative overflow-hidden rounded-3xl bg-ink-900 px-5 py-14 text-center dark:bg-ink-900 sm:px-6 sm:py-20 md:py-28">
               <div
                 className="pointer-events-none absolute inset-0 opacity-60"
                 style={{
@@ -422,17 +424,17 @@ export function PublicPortfolioPage() {
                 }}
               />
               <div className="relative">
-                <h2 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+                <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-5xl">
                   Construisons quelque chose de grand
                 </h2>
                 <p className="mx-auto mt-4 max-w-md text-ink-300">
                   Donne vie à tes idées avec un travail soigné, pensé pour tes
                   clients
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <a
                     href="#devis"
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink-900 transition hover:bg-ink-100"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink-900 transition hover:bg-ink-100"
                   >
                     Me contacter
                     <ArrowRight size={15} />
@@ -442,7 +444,7 @@ export function PublicPortfolioPage() {
                       href={whatsappLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-ink-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-ink-800"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-ink-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-ink-800"
                     >
                       <MessageCircle size={15} />
                       WhatsApp
@@ -452,7 +454,7 @@ export function PublicPortfolioPage() {
               </div>
             </div>
 
-            <div id="devis" className="mx-auto mt-12 max-w-2xl scroll-mt-24">
+            <div id="devis" className="mx-auto mt-8 max-w-2xl scroll-mt-20 sm:mt-12">
               <PublicLeadForm
                 userId={portfolio.user_id}
                 ownerFirstName={owner?.first_name}
@@ -462,7 +464,7 @@ export function PublicPortfolioPage() {
         </main>
 
         {/* ------------------------------------------------ Footer */}
-        <footer className="border-t border-ink-100 py-10 dark:border-ink-800">
+        <footer className="border-t border-ink-100 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-10 dark:border-ink-800 sm:pb-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-5 md:flex-row md:justify-between">
             <p className="text-sm text-ink-400">
               © {new Date().getFullYear()} {displayName}
@@ -491,6 +493,31 @@ export function PublicPortfolioPage() {
             </p>
           </div>
         </footer>
+
+        {/* ------------------------------------------------ Barre d'action mobile (pouce) */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/90 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-md dark:border-ink-800 dark:bg-[#0A0D12]/90 sm:hidden">
+          <div className="flex gap-2">
+            {whatsappLink && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Écrire sur WhatsApp"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-white"
+              >
+                <MessageCircle size={18} />
+              </a>
+            )}
+            <a
+              href="#devis"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-semibold text-white"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              Demander un devis
+              <ArrowRight size={15} />
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -510,11 +537,11 @@ function SectionHeading({
       <span className="inline-flex rounded-full border border-ink-100 bg-cream-100 px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-300">
         {eyebrow}
       </span>
-      <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+      <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:mt-5 sm:text-3xl md:text-4xl">
         {title}
       </h2>
       {subtitle && (
-        <p className="mx-auto mt-4 max-w-md text-ink-500 dark:text-ink-400">
+        <p className="mx-auto mt-3 max-w-md text-sm text-ink-500 dark:text-ink-400 sm:mt-4 sm:text-base">
           {subtitle}
         </p>
       )}
@@ -551,7 +578,7 @@ function MarqueeRow({
 
 function TestimonialCard({ t }: { t: PortfolioTestimonial }) {
   return (
-    <figure className="w-80 shrink-0 rounded-3xl border border-ink-100 bg-cream-100/60 p-6 dark:border-ink-800 dark:bg-ink-900/60">
+    <figure className="w-72 shrink-0 rounded-3xl border border-ink-100 bg-cream-100/60 p-5 dark:border-ink-800 dark:bg-ink-900/60 sm:w-80 sm:p-6">
     <blockquote className="text-sm leading-relaxed text-ink-600 dark:text-ink-300">
         « {t.content} »
       </blockquote>

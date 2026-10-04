@@ -128,21 +128,21 @@ export function AdminInvitesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">Invitations</h1>
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Invitations</h1>
           <p className="mt-1 text-sm text-ink-500">
             Envoie des accès aux early users avec un montant de crédits attribué.
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-1.5 text-sm">
+        <button onClick={() => setShowForm(true)} className="btn-primary flex w-full items-center gap-1.5 text-sm sm:w-auto">
           <Plus size={14} />
           Nouvelle invitation
         </button>
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded border border-ink-200 text-xs">
+        <div className="no-scrollbar flex max-w-full overflow-x-auto whitespace-nowrap rounded border border-ink-200 text-xs">
           <span className="bg-cream-50 px-3 py-1.5 font-medium text-ink-500">
             Total : <span className="font-mono font-semibold text-ink-800">{items.length}</span>
           </span>
@@ -156,7 +156,7 @@ export function AdminInvitesPage() {
             Révoquées : <span className="font-mono font-semibold text-danger-700">{counts.revoked}</span>
           </span>
         </div>
-        <div className="relative min-w-[220px] flex-1">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] sm:flex-1">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
           <input
             value={search}
@@ -180,7 +180,7 @@ export function AdminInvitesPage() {
       ) : (
         <ul className="divide-y divide-ink-100 overflow-hidden rounded-lg border border-ink-100 bg-cream-50">
           {visible.map((inv) => (
-            <li key={inv.id} className="flex items-center gap-4 p-4">
+            <li key={inv.id} className="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-500/10 text-accent-600">
                 {inv.status === 'accepted' ? <UserCheck size={17} /> : <Mail size={16} />}
               </span>
@@ -197,7 +197,7 @@ export function AdminInvitesPage() {
                     {inv.credits_granted} crédits
                   </span>
                 </div>
-                <p className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
                   <Clock size={11} className="shrink-0" />
                   {inv.status === 'accepted'
                     ? `Acceptée le ${fmtDate(inv.accepted_at)}`
@@ -212,7 +212,7 @@ export function AdminInvitesPage() {
                 </p>
                 {inv.notes && <p className="mt-0.5 truncate text-xs italic text-ink-500">« {inv.notes} »</p>}
               </div>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="-my-1 flex shrink-0 basis-full items-center justify-end gap-1 sm:my-0 sm:basis-auto">
                 <button
                   onClick={() => navigator.clipboard.writeText(inv.email)}
                   className="rounded p-2 text-ink-500 hover:bg-cream-100 hover:text-ink-800"
@@ -298,11 +298,8 @@ function InviteForm({ onClose, onSent }: { onClose: () => void; onSent: (inv: In
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/40 p-4 backdrop-blur-sm sm:p-6">
-      <form
-        onSubmit={submit}
-        className="mt-6 w-full max-w-md rounded-lg border border-ink-100 bg-cream-50 shadow-lg"
-      >
+    <div className="modal-overlay">
+      <form onSubmit={submit} className="modal-panel max-w-md">
         <header className="flex items-center justify-between gap-3 border-b border-ink-100 p-5">
           <h2 className="text-lg font-semibold text-ink-900">Nouvelle invitation</h2>
           <button

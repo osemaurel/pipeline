@@ -24,7 +24,7 @@ export function PhotoUploader({
   const [error, setError] = useState<string | null>(null)
 
   const dimensions =
-    size === 'lg' ? 'h-28 w-28' : 'h-20 w-20'
+    size === 'lg' ? 'h-20 w-20 sm:h-28 sm:w-28' : 'h-16 w-16 sm:h-20 sm:w-20'
 
   const pickFile = () => inputRef.current?.click()
 
@@ -58,7 +58,7 @@ export function PhotoUploader({
   return (
     <div>
       <label className="label">{label}</label>
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         <button
           type="button"
           onClick={pickFile}
@@ -83,7 +83,7 @@ export function PhotoUploader({
           )}
         </button>
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -92,7 +92,12 @@ export function PhotoUploader({
               className="btn-secondary"
             >
               <Upload size={14} />
-              {currentUrl ? 'Remplacer' : 'Téléverser une photo'}
+              {currentUrl ? 'Remplacer' : (
+                <>
+                  <span className="sm:hidden">Téléverser</span>
+                  <span className="hidden sm:inline">Téléverser une photo</span>
+                </>
+              )}
             </button>
             {currentUrl && (
               <button

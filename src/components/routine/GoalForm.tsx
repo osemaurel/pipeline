@@ -49,7 +49,8 @@ export function GoalForm({ userId, onCreated, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="text-ink-400 hover:text-ink-800"
+          aria-label="Fermer"
+          className="-m-2 flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:text-ink-800 sm:h-8 sm:w-8"
         >
           <X size={16} />
         </button>
@@ -64,8 +65,8 @@ export function GoalForm({ userId, onCreated, onCancel }: Props) {
           required
         />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-1">
           <label className="label">Catégorie</label>
           <select
             className="input"
@@ -97,6 +98,7 @@ export function GoalForm({ userId, onCreated, onCancel }: Props) {
           <label className="label">Cible</label>
           <input
             type="number"
+            inputMode="numeric"
             min="1"
             className="input"
             value={target}
@@ -110,7 +112,7 @@ export function GoalForm({ userId, onCreated, onCancel }: Props) {
           {error}
         </p>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
         <button type="button" onClick={onCancel} className="btn-secondary">
           Annuler
         </button>

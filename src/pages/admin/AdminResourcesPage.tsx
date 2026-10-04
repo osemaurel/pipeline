@@ -95,14 +95,14 @@ export function AdminResourcesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">Ressources</h1>
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Ressources</h1>
           <p className="mt-1 text-sm text-ink-500">
             Contenu géré par l'admin, affiché aux utilisateurs dans leur onglet Ressources.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
           {RESOURCE_TYPES.map((t) => (
             <button
               key={t.value}
@@ -117,10 +117,10 @@ export function AdminResourcesPage() {
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex overflow-hidden rounded border border-ink-200">
+        <div className="no-scrollbar flex max-w-full overflow-x-auto whitespace-nowrap rounded border border-ink-200">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 text-xs font-medium transition ${
+            className={`shrink-0 px-3 py-2.5 text-xs font-medium transition sm:py-1.5 ${
               filter === 'all' ? 'bg-ink-900 text-white' : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
             }`}
           >
@@ -132,7 +132,7 @@ export function AdminResourcesPage() {
               <button
                 key={t.value}
                 onClick={() => setFilter(t.value)}
-                className={`border-l border-ink-200 px-3 py-1.5 text-xs font-medium transition ${
+                className={`shrink-0 border-l border-ink-200 px-3 py-2.5 text-xs font-medium transition sm:py-1.5 ${
                   filter === t.value ? 'bg-ink-900 text-white' : 'bg-cream-50 text-ink-500 hover:bg-cream-100'
                 }`}
               >
@@ -141,7 +141,7 @@ export function AdminResourcesPage() {
             )
           })}
         </div>
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] sm:flex-1">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
           <input
             value={search}
@@ -165,7 +165,7 @@ export function AdminResourcesPage() {
           {visible.map((r) => {
             const Icon = TYPE_ICON[r.type]
             return (
-              <li key={r.id} className="flex items-center gap-4 p-4">
+              <li key={r.id} className="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4">
                 {r.cover_url ? (
                   <img src={r.cover_url} alt="" className="h-14 w-14 shrink-0 rounded object-cover" />
                 ) : (
@@ -191,7 +191,7 @@ export function AdminResourcesPage() {
                   {r.description && <p className="mt-0.5 truncate text-xs text-ink-500">{r.description}</p>}
                   <p className="mt-0.5 text-[11px] text-ink-400">Mis à jour le {fmtDate(r.updated_at)}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="-my-1 flex shrink-0 basis-full items-center justify-end gap-1 sm:my-0 sm:basis-auto">
                   <button
                     onClick={() => handleToggle(r)}
                     className="rounded p-2 text-ink-500 hover:bg-cream-100 hover:text-ink-800"
@@ -332,11 +332,8 @@ function ResourceFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/40 p-4 backdrop-blur-sm sm:p-6">
-      <form
-        onSubmit={submit}
-        className="mt-6 w-full max-w-2xl rounded-lg border border-ink-100 bg-cream-50 shadow-lg"
-      >
+    <div className="modal-overlay">
+      <form onSubmit={submit} className="modal-panel max-w-2xl">
         <header className="flex items-center justify-between gap-3 border-b border-ink-100 p-5">
           <h2 className="text-lg font-semibold text-ink-900">
             {existing ? 'Éditer la ressource' : 'Nouvelle ressource'}

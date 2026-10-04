@@ -66,17 +66,17 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-8 flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-ink-500">
-            Vue d'ensemble de ton activité —{' '}
-            {format(new Date(), "EEEE d MMMM", { locale: fr })}.
-          </p>
-        </div>
+      <header className="mb-5 sm:mb-8">
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          <span className="hidden sm:inline">Vue d'ensemble de ton activité — </span>
+          <span className="inline-block first-letter:uppercase sm:first-letter:normal-case">
+            {format(new Date(), "EEEE d MMMM", { locale: fr })}
+          </span>
+        </p>
       </header>
 
-      <section className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-8 sm:gap-4 md:grid-cols-4">
         <StatCard
           label="Prospects actifs"
           value={loading ? '—' : data?.stats.activeProspects ?? 0}
@@ -110,8 +110,8 @@ export function DashboardPage() {
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
           <section className="card">
             <SectionHeader
               title="Aujourd’hui"
@@ -133,8 +133,9 @@ export function DashboardPage() {
                   <li key={a.id} className="flex items-start gap-3 py-3">
                     <button
                       onClick={() => markActionDone(a.id)}
-                      className="mt-0.5 text-ink-300 transition hover:text-accent-500"
+                      className="-m-2 shrink-0 p-2 text-ink-300 transition hover:text-accent-500"
                       title="Marquer comme fait"
+                      aria-label="Marquer comme fait"
                     >
                       <Circle size={18} />
                     </button>
@@ -298,8 +299,9 @@ export function DashboardPage() {
                         onClick={() =>
                           navigator.clipboard.writeText(publicPortfolioUrl)
                         }
-                        className="shrink-0 rounded p-1 text-ink-400 hover:bg-cream-50 hover:text-ink-700"
+                        className="shrink-0 rounded p-2 text-ink-400 hover:bg-cream-50 hover:text-ink-700"
                         title="Copier le lien"
+                        aria-label="Copier le lien"
                       >
                         <Copy size={14} />
                       </button>
@@ -308,8 +310,9 @@ export function DashboardPage() {
                           href={publicPortfolioUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="shrink-0 rounded p-1 text-ink-400 hover:bg-cream-50 hover:text-ink-700"
+                          className="shrink-0 rounded p-2 text-ink-400 hover:bg-cream-50 hover:text-ink-700"
                           title="Ouvrir dans un nouvel onglet"
+                          aria-label="Ouvrir dans un nouvel onglet"
                         >
                           <ExternalLink size={14} />
                         </a>
@@ -393,19 +396,20 @@ function SectionHeader({
   action?: { label: string; to: string }
 }) {
   return (
-    <div className="mb-4 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Icon size={16} className="text-ink-400" />
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <Icon size={16} className="shrink-0 text-ink-400" />
+        <h2 className="truncate text-sm font-semibold uppercase tracking-wide text-ink-500">
           {title}
         </h2>
       </div>
       {action && (
         <Link
           to={action.to}
-          className="flex items-center gap-1 text-xs font-medium text-accent-600 hover:underline"
+          className="-my-2 flex shrink-0 items-center gap-1 py-2 text-xs font-medium text-accent-600 hover:underline"
         >
-          {action.label}
+          <span className="sm:hidden">Tout voir</span>
+          <span className="hidden sm:inline">{action.label}</span>
           <ArrowRight size={12} />
         </Link>
       )}

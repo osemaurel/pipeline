@@ -181,16 +181,16 @@ export function PortfolioPage() {
   const portfolio = bundle?.portfolio
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">Portfolio</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Portfolio</h1>
           <p className="mt-1 text-sm text-ink-500">
             Compose la page que tu partageras à tes prospects.
           </p>
         </div>
         {portfolio && (
-          <button onClick={() => setShowAi(true)} className="btn-primary">
+          <button onClick={() => setShowAi(true)} className="btn-primary w-full sm:w-auto">
             <Sparkles size={15} />
             Générer avec l'IA
           </button>
@@ -212,13 +212,13 @@ export function PortfolioPage() {
               <span className="text-ink-500">Ton lien public</span>
             </div>
             {portfolio ? (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex min-w-0 flex-1 items-center gap-1 rounded border border-ink-100 bg-cream-100 px-3 py-2 font-mono text-sm text-ink-700">
+              <div className="mt-2 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                <div className="flex min-w-0 basis-full items-center gap-1 rounded border border-ink-100 bg-cream-100 px-3 py-2.5 font-mono text-sm text-ink-700 sm:flex-1 sm:basis-auto sm:py-2">
                   <span className="truncate">{publicUrl}</span>
                 </div>
                 <button
                   onClick={copyLink}
-                  className="btn-secondary shrink-0"
+                  className="btn-secondary flex-1 sm:flex-none sm:shrink-0"
                   title="Copier"
                 >
                   {copyOk ? <Check size={14} /> : <Copy size={14} />}
@@ -229,7 +229,7 @@ export function PortfolioPage() {
                     href={publicUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-secondary shrink-0"
+                    className="btn-secondary flex-1 sm:flex-none sm:shrink-0"
                     title="Ouvrir"
                   >
                     <ExternalLink size={14} />
@@ -239,8 +239,10 @@ export function PortfolioPage() {
               </div>
             ) : (
               <div className="mt-2 space-y-2">
-                <div className="flex items-center gap-1 rounded border border-ink-200 bg-cream-50 px-3 py-2 font-mono text-sm text-ink-500 focus-within:border-accent-500">
-                  <span>{window.location.origin}/p/</span>
+                <div className="flex min-w-0 items-center gap-1 rounded border border-ink-200 bg-cream-50 px-3 py-2.5 font-mono text-base text-ink-500 focus-within:border-accent-500 sm:py-2 sm:text-sm">
+                  <span className="shrink-0">
+                    <span className="hidden sm:inline">{window.location.origin}</span>/p/
+                  </span>
                   <input
                     value={slugDraft}
                     onChange={(e) => {
@@ -249,22 +251,25 @@ export function PortfolioPage() {
                       )
                       setSlugTouched(true)
                     }}
-                    className="flex-1 border-0 bg-transparent p-0 text-ink-800 focus:outline-none focus:ring-0"
+                    className="min-w-0 flex-1 border-0 bg-transparent p-0 text-ink-800 focus:outline-none focus:ring-0"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                   {slugStatus === 'checking' && (
-                    <span className="text-xs text-ink-300">Vérification…</span>
+                    <span className="shrink-0 text-xs text-ink-300">Vérification…</span>
                   )}
                   {slugStatus === 'ok' && (
-                    <span className="text-xs text-success-500">Disponible</span>
+                    <span className="shrink-0 text-xs text-success-500">Disponible</span>
                   )}
                   {slugStatus === 'taken' && (
-                    <span className="text-xs text-danger-500">Déjà pris</span>
+                    <span className="shrink-0 text-xs text-danger-500">Déjà pris</span>
                   )}
                 </div>
                 <button
                   onClick={savePortfolio}
                   disabled={publishing || slugStatus === 'taken' || !slugDraft}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto"
                 >
                   {publishing ? 'Création…' : 'Créer mon portfolio'}
                 </button>
@@ -272,7 +277,7 @@ export function PortfolioPage() {
             )}
           </div>
           {portfolio && (
-            <div className="flex shrink-0 flex-col gap-2">
+            <div className="grid shrink-0 grid-cols-2 gap-2 md:flex md:flex-col">
               <button
                 onClick={togglePublish}
                 disabled={publishing}
@@ -297,7 +302,7 @@ export function PortfolioPage() {
                 className="btn-secondary"
               >
                 <QrCode size={14} />
-                {showQR ? 'Cacher le QR' : 'Voir le QR code'}
+                {showQR ? 'Cacher le QR' : 'QR code'}
               </button>
             </div>
           )}

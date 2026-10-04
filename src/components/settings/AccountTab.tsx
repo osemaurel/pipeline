@@ -66,9 +66,9 @@ export function AccountTab() {
         </h3>
         <div className="rounded-lg border border-ink-100 bg-cream-100 p-3">
           <p className="text-xs uppercase tracking-wide text-ink-400">Email</p>
-          <p className="mt-1 flex items-center gap-2 text-sm text-ink-800">
-            <Mail size={14} className="text-ink-400" />
-            {user?.email ?? '—'}
+          <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-ink-800">
+            <Mail size={14} className="shrink-0 text-ink-400" />
+            <span className="break-all">{user?.email ?? '—'}</span>
           </p>
           <p className="mt-2 text-xs text-ink-400">
             Le changement d'email n'est pas encore pris en charge.
@@ -112,7 +112,7 @@ export function AccountTab() {
               {passwordError}
             </p>
           )}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
             {passwordSaved && (
               <span className="flex items-center gap-1 text-xs text-success-500">
                 <Check size={13} />
@@ -155,7 +155,7 @@ export function AccountTab() {
                   checked={enabled}
                   onChange={() => toggleModule(m.value)}
                   disabled={savingModules}
-                  className="mt-0.5 h-4 w-4 accent-[#7F56D9]"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#7F56D9] sm:h-4 sm:w-4"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink-800">{m.label}</p>

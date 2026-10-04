@@ -26,9 +26,9 @@ export function AiGeneratorPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink-900">Générateur IA</h1>
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Générateur IA</h1>
           <p className="mt-1 text-sm text-ink-500">
             Ton assistant pour construire ton business sur ComeUp, Fiverr et Upwork.
           </p>
@@ -50,14 +50,14 @@ export function AiGeneratorPage() {
       )}
 
       {/* Onglets plateformes */}
-      <div className="mb-6 grid grid-cols-3 gap-2">
+      <div className="mb-5 grid grid-cols-3 gap-2 sm:mb-6">
         {TABS.map((t) => {
           const active = tab === t.value
           return (
             <button
               key={t.value}
               onClick={() => setTab(t.value)}
-              className={`flex items-center justify-center gap-2 rounded-lg border py-3 text-sm font-semibold transition ${
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border py-2.5 text-xs font-semibold transition sm:flex-row sm:gap-2 sm:py-3 sm:text-sm ${
                 active ? 'border-accent-500 bg-accent-500/5 text-ink-900' : 'border-ink-100 bg-cream-50 text-ink-500 hover:bg-cream-100'
               }`}
             >

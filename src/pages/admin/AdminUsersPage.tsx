@@ -50,23 +50,27 @@ export function AdminUsersPage() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-ink-900">Utilisateurs <span className="font-mono text-base text-ink-400">({total})</span></h1>
-        <button onClick={exportCsv} className="btn-secondary"><Download size={14} />Export CSV</button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-5">
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Utilisateurs <span className="font-mono text-base text-ink-400">({total})</span></h1>
+        <button onClick={exportCsv} className="btn-secondary" aria-label="Exporter en CSV">
+          <Download size={14} />
+          <span className="hidden sm:inline">Export CSV</span>
+          <span className="sm:hidden">CSV</span>
+        </button>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] sm:flex-1">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
           <input className="input pl-9" placeholder="Chercher par nom ou email…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <select className="input max-w-[170px]" value={status} onChange={(e) => { setStatus(e.target.value as UserStatusFilter); setPage(0) }}>
+        <select className="input min-w-0 flex-1 sm:max-w-[170px] sm:flex-none" value={status} onChange={(e) => { setStatus(e.target.value as UserStatusFilter); setPage(0) }}>
           <option value="all">Tous les statuts</option>
           <option value="paid">Payants</option>
           <option value="unpaid">Non payants</option>
           <option value="suspended">Suspendus</option>
         </select>
-        <select className="input max-w-[190px]" value={sort} onChange={(e) => setSort(e.target.value as UserSort)}>
+        <select className="input min-w-0 flex-1 sm:max-w-[190px] sm:flex-none" value={sort} onChange={(e) => setSort(e.target.value as UserSort)}>
           <option value="created_desc">Plus récents</option>
           <option value="created_asc">Plus anciens</option>
           <option value="credits_desc">Crédits ↓</option>
@@ -75,7 +79,39 @@ export function AdminUsersPage() {
       </div>
 
       <div className="card overflow-hidden !p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile : cartes cliquables */}
+        <ul className="divide-y divide-ink-100 md:hidden">
+          {loading ? (
+            <li className="py-10 text-center text-sm text-ink-400">Chargement…</li>
+          ) : rows.length === 0 ? (
+            <li className="py-10 text-center text-sm text-ink-400">Aucun utilisateur.</li>
+          ) : rows.map((u) => (
+            <li key={u.user_id}>
+              <Link to={`/admin/users/${u.user_id}`} className="flex items-center gap-3 px-4 py-3 active:bg-cream-100">
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cream-200 text-xs font-semibold text-ink-500">
+                    {u.first_name.slice(0, 1)}{u.last_name.slice(0, 1)}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-ink-800">{u.first_name} {u.last_name}</p>
+                    <StatusBadge suspended={u.is_suspended} paid={u.has_paid} />
+                  </div>
+                  <p className="truncate text-xs text-ink-400">{u.email}</p>
+                  <p className="mt-1 font-mono text-[11px] text-ink-500">
+                    {u.credits_remaining} crédits · {u.prospects_count} prospects · {u.services_count} services
+                  </p>
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-ink-300" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wide text-ink-400">
@@ -125,9 +161,9 @@ export function AdminUsersPage() {
         </div>
         <div className="flex items-center justify-between border-t border-ink-100 px-4 py-3">
           <span className="text-xs text-ink-400">Page {page + 1} / {pages}</span>
-          <div className="flex gap-1">
-            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="flex h-8 w-8 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100"><ChevronLeft size={15} /></button>
-            <button disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} className="flex h-8 w-8 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100"><ChevronRight size={15} /></button>
+          <div className="flex gap-1.5">
+            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Page précédente" className="flex h-10 w-10 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100 sm:h-8 sm:w-8"><ChevronLeft size={15} /></button>
+            <button disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} aria-label="Page suivante" className="flex h-10 w-10 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100 sm:h-8 sm:w-8"><ChevronRight size={15} /></button>
           </div>
         </div>
       </div>

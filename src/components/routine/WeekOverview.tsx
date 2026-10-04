@@ -37,7 +37,7 @@ export function WeekOverview({ routines }: Props) {
   }
 
   return (
-    <div className="flex items-end gap-2">
+    <div className="flex items-end gap-1.5 sm:gap-2">
       {days.map(({ date, routine }) => {
         const score = routine ? activityScore(routine) : 0
         return (

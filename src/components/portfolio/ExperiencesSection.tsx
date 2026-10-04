@@ -99,8 +99,8 @@ export function ExperiencesSection({ userId, experiences, onChange }: Props) {
             className="flex items-start gap-3 rounded-lg border border-ink-100 bg-cream-50 p-3"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="truncate text-sm font-semibold text-ink-900">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                <p className="text-sm font-semibold text-ink-900 sm:truncate">
                   {x.role}
                 </p>
                 <span className="shrink-0 font-mono text-xs text-ink-400">
@@ -123,7 +123,8 @@ export function ExperiencesSection({ userId, experiences, onChange }: Props) {
             </div>
             <button
               onClick={() => startEdit(x)}
-              className="shrink-0 text-ink-400 hover:text-accent-600"
+              className="-m-2 flex h-10 w-10 shrink-0 items-center justify-center rounded text-ink-400 hover:text-accent-600 sm:h-8 sm:w-8"
+              aria-label="Modifier"
               title="Modifier"
             >
               <Edit3 size={16} />
@@ -176,6 +177,7 @@ export function ExperiencesSection({ userId, experiences, onChange }: Props) {
                   }
                   required
                   placeholder="2022"
+                  inputMode="numeric"
                   maxLength={4}
                 />
               </div>
@@ -188,6 +190,7 @@ export function ExperiencesSection({ userId, experiences, onChange }: Props) {
                     setEditing({ ...editing, end_year: e.target.value })
                   }
                   placeholder="Vide = Aujourd'hui"
+                  inputMode="numeric"
                   maxLength={4}
                 />
               </div>

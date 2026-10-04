@@ -57,7 +57,7 @@ export function PublicLeadForm({ userId, ownerFirstName }: Props) {
   return (
     <form
       onSubmit={submit}
-      className="rounded-lg border border-ink-100 bg-cream-50 p-6 dark:border-transparent dark:bg-transparent"
+      className="rounded-lg border border-ink-100 bg-cream-50 p-4 dark:border-transparent dark:bg-transparent sm:p-6"
     >
       <h3 className="text-lg font-semibold text-ink-900 dark:text-white">
         Demander un devis
@@ -73,6 +73,7 @@ export function PublicLeadForm({ userId, ownerFirstName }: Props) {
             className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
             required
           />
         </div>
@@ -84,14 +85,19 @@ export function PublicLeadForm({ userId, ownerFirstName }: Props) {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              inputMode="email"
             />
           </div>
           <div>
             <label className="label">Téléphone / WhatsApp</label>
             <input
               className="input"
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              autoComplete="tel"
+              inputMode="tel"
               placeholder="+221…"
             />
           </div>

@@ -105,7 +105,7 @@ export function MarkdownEditor({ value, onChange, onBlur, placeholder }: Props) 
 
   return (
     <div className="rounded-lg border border-ink-100 bg-cream-50">
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-ink-100 bg-cream-100 p-1.5">
+      <div className="no-scrollbar flex items-center gap-0.5 overflow-x-auto border-b border-ink-100 bg-cream-100 p-1.5 sm:flex-wrap sm:overflow-visible [&>*]:shrink-0">
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}

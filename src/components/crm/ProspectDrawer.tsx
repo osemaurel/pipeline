@@ -75,8 +75,8 @@ export function ProspectDrawer({ userId, prospect, onClose, onUpdated, onDeleted
         className="flex-1 bg-ink-900/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      <aside className="flex w-full max-w-xl flex-col overflow-y-auto border-l border-ink-100 bg-cream-50 shadow-2xl">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-ink-100 bg-cream-50/95 p-6 backdrop-blur">
+      <aside className="flex w-full max-w-xl flex-col overflow-y-auto overscroll-contain border-l border-ink-100 bg-cream-50 shadow-2xl">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-ink-100 bg-cream-50/95 p-4 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur sm:p-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h2 className="truncate text-xl font-semibold text-ink-900">
@@ -104,7 +104,7 @@ export function ProspectDrawer({ userId, prospect, onClose, onUpdated, onDeleted
               <select
                 value={prospect.status}
                 onChange={(e) => changeStage(e.target.value)}
-                className={`rounded-full border-0 px-3 py-1 text-xs font-medium focus:ring-2 focus:ring-accent-500 ${stage.color}`}
+                className={`rounded-full border-0 px-3 py-1.5 text-base font-medium focus:ring-2 focus:ring-accent-500 sm:py-1 sm:text-xs ${stage.color}`}
               >
                 {PIPELINE_STAGES.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -121,13 +121,14 @@ export function ProspectDrawer({ userId, prospect, onClose, onUpdated, onDeleted
           </div>
           <button
             onClick={onClose}
-            className="text-ink-400 hover:text-ink-800"
+            className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink-400 hover:text-ink-800 active:bg-cream-200"
+            aria-label="Fermer"
           >
-            <X size={20} />
+            <X size={22} />
           </button>
         </header>
 
-        <div className="border-b border-ink-100 px-6">
+        <div className="border-b border-ink-100 px-4 sm:px-6">
           <div className="flex gap-4">
             <TabButton active={tab === 'overview'} onClick={() => setTab('overview')}>
               Aperçu
@@ -138,7 +139,7 @@ export function ProspectDrawer({ userId, prospect, onClose, onUpdated, onDeleted
           </div>
         </div>
 
-        <div className="flex-1 space-y-6 p-6">
+        <div className="flex-1 space-y-6 p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6">
           {tab === 'edit' ? (
             <ProspectForm
               userId={userId}
@@ -342,7 +343,7 @@ function AddInteractionForm({
           <X size={14} />
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="label">Type</label>
           <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
@@ -573,7 +574,7 @@ function NewActionForm({
         onChange={(e) => setTitle(e.target.value)}
         required
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
           {ACTION_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -642,7 +643,7 @@ function NewMeetingForm({
       }}
       className="rounded-lg border border-accent-500/30 bg-accent-500/5 p-3 space-y-2"
     >
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <input
           type="datetime-local"
           className="input"
@@ -660,7 +661,7 @@ function NewMeetingForm({
           placeholder="Durée (min)"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <input
           className="input"
           value={platform}

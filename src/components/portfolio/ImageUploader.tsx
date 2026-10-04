@@ -78,8 +78,13 @@ export function ImageUploader({
               alt=""
               className="h-full w-full object-cover"
             />
-            <span className="absolute inset-0 flex items-center justify-center gap-2 bg-ink-900/50 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
+            <span className="absolute inset-0 hidden items-center justify-center gap-2 bg-ink-900/50 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 sm:flex">
               <Upload size={16} />
+              Remplacer
+            </span>
+            {/* Tactile : pas de survol, on affiche un badge permanent */}
+            <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-ink-900/70 px-2.5 py-1 text-xs font-medium text-white sm:hidden">
+              <Upload size={12} />
               Remplacer
             </span>
           </>
@@ -97,7 +102,7 @@ export function ImageUploader({
           <button
             type="button"
             onClick={removeImage}
-            className="flex shrink-0 items-center gap-1 text-xs font-medium text-danger-600 hover:underline"
+            className="-my-2 flex shrink-0 items-center gap-1 py-2 text-xs font-medium text-danger-600 hover:underline"
           >
             <Trash2 size={11} />
             Retirer

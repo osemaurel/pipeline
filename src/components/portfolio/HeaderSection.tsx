@@ -40,8 +40,8 @@ export function HeaderSection({ userId, portfolio, onChange }: Props) {
       icon={User}
       description="La première impression : ta photo, ton pitch, ta disponibilité."
     >
-      <label className="mb-4 flex cursor-pointer items-center justify-between rounded-lg border border-ink-100 bg-cream-100 p-3">
-        <div className="flex items-center gap-3">
+      <label className="mb-4 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-ink-100 bg-cream-100 p-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span
             className={`inline-flex h-2.5 w-2.5 rounded-full ${
               available ? 'animate-pulse-dot bg-success-500' : 'bg-ink-300'
@@ -60,7 +60,7 @@ export function HeaderSection({ userId, portfolio, onChange }: Props) {
           type="checkbox"
           checked={available}
           onChange={toggleAvailable}
-          className="h-4 w-4 accent-[#7F56D9]"
+          className="h-5 w-5 shrink-0 accent-[#7F56D9] sm:h-4 sm:w-4"
         />
       </label>
 

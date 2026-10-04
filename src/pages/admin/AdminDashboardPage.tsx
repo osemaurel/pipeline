@@ -34,9 +34,9 @@ export function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-ink-900">Vue d’ensemble</h1>
+      <h1 className="mb-4 text-xl font-semibold text-ink-900 sm:mb-6 sm:text-2xl">Vue d’ensemble</h1>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <Kpi label="Utilisateurs" value={stats ? fmt(stats.total_users) : '—'} icon={Users} />
         <Kpi label="Payants" value={stats ? fmt(stats.paid_users) : '—'} icon={CreditCard} accent />
         <Kpi label="Suspendus" value={stats ? fmt(stats.suspended_users) : '—'} icon={Ban} />
@@ -90,13 +90,13 @@ export function AdminDashboardPage() {
           <tbody>
             {recent.map((u) => (
               <tr key={u.user_id} className="border-b border-ink-100 last:border-0">
-                <td className="py-2.5">
-                  <p className="font-medium text-ink-800">{u.first_name} {u.last_name}</p>
-                  <p className="text-xs text-ink-400">{u.email}</p>
+                <td className="max-w-0 py-2.5 pr-2">
+                  <p className="truncate font-medium text-ink-800">{u.first_name} {u.last_name}</p>
+                  <p className="truncate text-xs text-ink-400">{u.email}</p>
                 </td>
-                <td className="py-2.5 text-xs text-ink-500">{format(new Date(u.created_at), 'd MMM yyyy', { locale: fr })}</td>
+                <td className="hidden whitespace-nowrap py-2.5 text-xs text-ink-500 sm:table-cell">{format(new Date(u.created_at), 'd MMM yyyy', { locale: fr })}</td>
                 <td className="py-2.5 text-right">
-                  <Link to={`/admin/users/${u.user_id}`} className="text-xs font-medium text-accent-600 hover:underline">Voir la fiche</Link>
+                  <Link to={`/admin/users/${u.user_id}`} className="inline-block whitespace-nowrap py-2 text-xs font-medium text-accent-600 hover:underline">Voir la fiche</Link>
                 </td>
               </tr>
             ))}
@@ -109,14 +109,14 @@ export function AdminDashboardPage() {
 
 function Kpi({ label, value, hint, icon: Icon, accent }: { label: string; value: string; hint?: string; icon: typeof Users; accent?: boolean }) {
   return (
-    <div className="card !p-4">
-      <div className="flex items-start justify-between">
-        <p className="text-xs uppercase tracking-wide text-ink-400">{label}</p>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${accent ? 'bg-accent-500/10 text-accent-600' : 'bg-ink-100 text-ink-500'}`}>
+    <div className="card min-w-0 !p-3.5 sm:!p-4">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-[11px] uppercase leading-tight tracking-wide text-ink-400 sm:text-xs">{label}</p>
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${accent ? 'bg-accent-500/10 text-accent-600' : 'bg-ink-100 text-ink-500'}`}>
           <Icon size={15} />
         </span>
       </div>
-      <p className="mt-2 font-mono text-2xl font-semibold text-ink-900">{value}</p>
+      <p className="mt-2 truncate font-mono text-xl font-semibold text-ink-900 sm:text-2xl">{value}</p>
       {hint && <p className="text-xs text-ink-400">{hint}</p>}
     </div>
   )

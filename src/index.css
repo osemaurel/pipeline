@@ -7,10 +7,21 @@
     font-family: theme('fontFamily.sans');
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply bg-cream-100 text-ink-800;
+    /* Filet de sécurité : un élément trop large ne doit jamais provoquer de
+       scroll horizontal sur mobile. `clip` (et non `hidden`) préserve sticky. */
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Les médias ne débordent jamais de leur conteneur */
+  img, video, svg, canvas {
+    max-width: 100%;
   }
 
   h1, h2, h3 {
@@ -18,17 +29,29 @@
   }
 }
 
+@layer utilities {
+  /* Défilement horizontal sans barre visible (onglets, chips). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer components {
+  /* Mobile : cibles tactiles ≥ 44px (recommandation Apple/Google) ; desktop inchangé. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded bg-accent-500 px-4 py-2.5 text-sm font-semibold text-white shadow-xs ring-1 ring-inset ring-accent-600/20 transition hover:bg-accent-600 focus:outline-none focus:ring-4 focus:ring-accent-500/25 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded bg-accent-500 px-4 py-2.5 text-sm font-semibold sm:min-h-0 text-white shadow-xs ring-1 ring-inset ring-accent-600/20 transition hover:bg-accent-600 focus:outline-none focus:ring-4 focus:ring-accent-500/25 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded border border-ink-200 bg-cream-50 px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-xs transition hover:bg-cream-100 focus:outline-none focus:ring-4 focus:ring-ink-100 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded border sm:min-h-0 border-ink-200 bg-cream-50 px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-xs transition hover:bg-cream-100 focus:outline-none focus:ring-4 focus:ring-ink-100 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .input {
-    @apply w-full rounded border border-ink-200 bg-cream-50 px-3.5 py-2.5 text-sm text-ink-900 shadow-xs placeholder:text-ink-300 transition focus:border-accent-300 focus:outline-none focus:ring-4 focus:ring-accent-500/15 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:placeholder:text-ink-400;
+    /* 16px sur mobile : en dessous, Safari iOS zoome automatiquement au focus. */
+    @apply w-full rounded border border-ink-200 bg-cream-50 px-3.5 py-2.5 text-base text-ink-900 sm:text-sm shadow-xs placeholder:text-ink-300 transition focus:border-accent-300 focus:outline-none focus:ring-4 focus:ring-accent-500/15 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:placeholder:text-ink-400;
   }
 
   .label {
@@ -36,7 +59,16 @@
   }
 
   .card {
-    @apply rounded-lg border border-ink-100 bg-cream-50 p-6 shadow-xs;
+    @apply rounded-lg border border-ink-100 bg-cream-50 p-4 shadow-xs sm:p-6;
+  }
+
+  /* Modales : feuille qui monte du bas sur mobile (bottom sheet), fenêtre
+     centrée sur desktop. Le panneau défile en interne sur mobile. */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-ink-900/40 backdrop-blur-sm sm:items-start sm:p-6;
+  }
+  .modal-panel {
+    @apply relative w-full max-h-[92dvh] overflow-y-auto overscroll-contain rounded-t-2xl border border-ink-100 bg-cream-50 pb-[env(safe-area-inset-bottom)] shadow-lg sm:mt-6 sm:max-h-none sm:overflow-visible sm:rounded-lg sm:pb-0;
   }
 
   /* Sur la page publique du portfolio, la couleur d'accent choisie par
@@ -71,4 +103,41 @@
   float: left;
   pointer-events: none;
   height: 0;
+}
+
+/* Tableaux de l'éditeur : défilent horizontalement sur petit écran au lieu
+   de casser la mise en page (tableau des packs ComeUp). */
+@media (max-width: 639px) {
+  .markdown-editor-body .ProseMirror table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ---------- Bottom sheet mobile ---------- */
+@media (max-width: 639px) {
+  .modal-panel {
+    animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Poignée visuelle en haut de la feuille */
+  .modal-panel::before {
+    content: '';
+    position: sticky;
+    top: 6px;
+    z-index: 20;
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 6px auto -10px;
+    border-radius: 9999px;
+    background: theme('colors.ink.200');
+  }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-panel { animation: none; }
 }

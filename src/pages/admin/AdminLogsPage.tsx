@@ -39,18 +39,52 @@ export function AdminLogsPage() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-ink-900">Logs admin <span className="font-mono text-base text-ink-400">({total})</span></h1>
-        <div className="flex items-center gap-2">
-          <select className="input max-w-[180px]" value={actionType} onChange={(e) => { setActionType(e.target.value); setPage(0) }}>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Logs admin <span className="font-mono text-base text-ink-400">({total})</span></h1>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <select className="input min-w-0 flex-1 sm:max-w-[180px] sm:flex-none" value={actionType} onChange={(e) => { setActionType(e.target.value); setPage(0) }}>
             <option value="">Toutes les actions</option>
             {Object.entries(ACTION_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
-          <button onClick={exportCsv} className="btn-secondary"><Download size={14} />Export CSV</button>
+          <button onClick={exportCsv} className="btn-secondary shrink-0" aria-label="Exporter en CSV">
+            <Download size={14} />
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">CSV</span>
+          </button>
         </div>
       </div>
 
       <div className="card overflow-hidden !p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile : flux de cartes */}
+        <ul className="divide-y divide-ink-100 md:hidden">
+          {loading ? (
+            <li className="py-10 text-center text-sm text-ink-400">Chargement…</li>
+          ) : rows.length === 0 ? (
+            <li className="py-10 text-center text-sm text-ink-400">Aucun log.</li>
+          ) : rows.map((l) => (
+            <li key={l.id} className="px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate rounded-full bg-cream-200 px-2 py-0.5 text-xs font-medium text-ink-600">{ACTION_LABELS[l.action_type] ?? l.action_type}</span>
+                <span className="shrink-0 text-[11px] text-ink-400">{format(new Date(l.created_at), 'd MMM HH:mm', { locale: fr })}</span>
+              </div>
+              <p className="mt-1.5 text-sm text-ink-700">
+                <span className="font-medium">{l.admin_name}</span>
+                {l.target_user_id && (
+                  <>
+                    {' → '}
+                    <Link to={`/admin/users/${l.target_user_id}`} className="text-accent-600 hover:underline">{l.target_name}</Link>
+                  </>
+                )}
+              </p>
+              {l.details && Object.keys(l.details).length > 0 && (
+                <p className="mt-1 break-words text-xs text-ink-500">
+                  {Object.entries(l.details).filter(([, v]) => v != null).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 text-left text-xs uppercase tracking-wide text-ink-400">
@@ -89,9 +123,9 @@ export function AdminLogsPage() {
         </div>
         <div className="flex items-center justify-between border-t border-ink-100 px-4 py-3">
           <span className="text-xs text-ink-400">Page {page + 1} / {pages}</span>
-          <div className="flex gap-1">
-            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="flex h-8 w-8 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100"><ChevronLeft size={15} /></button>
-            <button disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} className="flex h-8 w-8 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100"><ChevronRight size={15} /></button>
+          <div className="flex gap-1.5">
+            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Page précédente" className="flex h-10 w-10 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100 sm:h-8 sm:w-8"><ChevronLeft size={15} /></button>
+            <button disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} aria-label="Page suivante" className="flex h-10 w-10 items-center justify-center rounded border border-ink-200 text-ink-500 disabled:opacity-40 hover:bg-cream-100 sm:h-8 sm:w-8"><ChevronRight size={15} /></button>
           </div>
         </div>
       </div>

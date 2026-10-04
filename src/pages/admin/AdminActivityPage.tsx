@@ -28,16 +28,16 @@ export function AdminActivityPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold text-ink-900">Activité globale</h1>
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Activité globale</h1>
         <span className="flex items-center gap-1.5 text-xs text-ink-400">
           <span className="h-2 w-2 animate-pulse-dot rounded-full bg-success-500" />
           Rafraîchi {formatDistanceToNow(lastUpdate, { locale: fr, addSuffix: true })}
         </span>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="no-scrollbar -mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
         {(['all', 'signup', 'payment', 'prospect', 'service', 'search'] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filter === f ? 'bg-ink-900 text-white' : 'bg-cream-200 text-ink-600 hover:bg-ink-100'}`}>
+          <button key={f} onClick={() => setFilter(f)} aria-pressed={filter === f} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-medium transition sm:px-3 sm:py-1.5 ${filter === f ? 'bg-ink-900 text-white' : 'bg-cream-200 text-ink-600 hover:bg-ink-100'}`}>
             {f === 'all' ? 'Tout' : TYPE_LABEL[f]}
           </button>
         ))}

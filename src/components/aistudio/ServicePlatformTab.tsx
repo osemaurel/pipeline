@@ -191,7 +191,7 @@ export function ServicePlatformTab({ userId, platform, onCredits }: Props) {
         />
       ) : (
         <section className="card !p-0">
-          <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3">
+          <div className="flex items-center justify-between border-b border-ink-100 px-4 py-3 sm:px-5">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
               Mes services rédigés ({services.length})
             </h2>
@@ -206,7 +206,7 @@ export function ServicePlatformTab({ userId, platform, onCredits }: Props) {
                 <li key={svc.id}>
                   <button
                     onClick={() => { setSelectedId(svc.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                    className="flex w-full items-center gap-4 px-5 py-3 text-left transition hover:bg-cream-100"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-cream-100 active:bg-cream-200 sm:gap-4 sm:px-5"
                   >
                     {svc.thumbnail_url ? (
                       <img src={svc.thumbnail_url} alt="" className="h-12 w-20 shrink-0 rounded object-cover" />
@@ -223,7 +223,8 @@ export function ServicePlatformTab({ userId, platform, onCredits }: Props) {
                         {svc.price != null ? ` · ${svc.price}${cur}` : ''}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs font-medium text-accent-600">Ouvrir →</span>
+                    <span className="hidden shrink-0 text-xs font-medium text-accent-600 sm:inline">Ouvrir →</span>
+                    <ArrowRight size={16} className="shrink-0 text-ink-300 sm:hidden" />
                   </button>
                 </li>
               ))}
@@ -399,13 +400,16 @@ function SuggestionDetailPage({
         </p>
       </section>
 
-      <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-100 bg-cream-50/95 p-4 shadow-lg backdrop-blur">
+      {/* Sur mobile, collée juste au-dessus de la barre d'onglets */}
+      <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 rounded-lg border border-ink-100 bg-cream-50/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-4 lg:bottom-4">
         <p className="text-xs text-ink-500">
           Coût : <span className="font-mono font-semibold text-ink-800">{platform === 'comeup' ? '2 crédits' : '1 crédit'}</span>
-          {' · '}
-          L'IA génère titre, description, packs, options, FAQ, miniature-concept.
+          <span className="hidden sm:inline">
+            {' · '}
+            L'IA génère titre, description, packs, options, FAQ, miniature-concept.
+          </span>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[auto_1fr] gap-2 sm:flex sm:items-center">
           <button onClick={onBack} disabled={writing} className="btn-secondary">
             Annuler
           </button>

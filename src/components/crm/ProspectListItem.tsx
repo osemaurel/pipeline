@@ -36,15 +36,15 @@ export function ProspectListItem({ prospect, onClick, active }: Props) {
           {prospect.company_name}
           {prospect.position && ` · ${prospect.position}`}
         </p>
-        <div className="mt-1.5 flex items-center gap-2">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${stage.color}`}
+            className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${stage.color}`}
           >
             {stage.label}
           </span>
           {prospect.last_interaction_at && (
             <span className="text-[10px] text-ink-400">
-              Dernière interaction{' '}
+              <span className="hidden sm:inline">Dernière interaction </span>
               {formatDistanceToNow(new Date(prospect.last_interaction_at), {
                 locale: fr,
                 addSuffix: true,

@@ -72,8 +72,8 @@ export function ResourcesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-ink-900">Ressources</h1>
+      <header className="mb-5 sm:mb-6">
+        <h1 className="text-xl font-semibold text-ink-900 sm:text-2xl">Ressources</h1>
         <p className="mt-1 text-sm text-ink-500">
           Ebooks, outils, prompts et formations sélectionnés pour t'aider à mieux vendre et livrer.
         </p>
@@ -88,7 +88,7 @@ export function ResourcesPage() {
             <button
               key={t.value}
               onClick={() => switchTab(t.value)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm font-semibold transition ${
+              className={`flex min-w-0 items-center gap-2 rounded-lg border px-3 py-3 text-sm font-semibold transition ${
                 active
                   ? 'border-accent-500 bg-accent-500/5 text-ink-900'
                   : 'border-ink-100 bg-cream-50 text-ink-500 hover:bg-cream-100'
@@ -106,7 +106,7 @@ export function ResourcesPage() {
 
       {byTab.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative w-full sm:w-auto sm:min-w-[220px] sm:flex-1">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
             <input
               value={search}
@@ -116,10 +116,10 @@ export function ResourcesPage() {
             />
           </div>
           {categoriesForTab.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="no-scrollbar -mx-4 flex w-[calc(100%+2rem)] items-center gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:w-auto sm:flex-wrap sm:px-0">
               <button
                 onClick={() => setCategory('all')}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-medium transition sm:px-3 sm:py-1 ${
                   category === 'all' ? 'bg-ink-900 text-white' : 'bg-cream-100 text-ink-500 hover:bg-cream-200'
                 }`}
               >
@@ -129,7 +129,7 @@ export function ResourcesPage() {
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium transition sm:px-3 sm:py-1 ${
                     category === c ? 'bg-ink-900 text-white' : 'bg-cream-100 text-ink-500 hover:bg-cream-200'
                   }`}
                 >
@@ -152,7 +152,7 @@ export function ResourcesPage() {
           Aucune ressource ne correspond à ta recherche.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {visible.map((r) => (
             <ResourceCard key={r.id} resource={r} />
           ))}
