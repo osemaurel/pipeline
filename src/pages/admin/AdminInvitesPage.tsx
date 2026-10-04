@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import {
+  AlertCircle,
   Check,
   Clock,
   Copy,
@@ -11,6 +12,7 @@ import {
   Trash2,
   UserCheck,
   UserX,
+  Users,
   X,
 } from 'lucide-react'
 import {
@@ -90,6 +92,21 @@ export function AdminInvitesPage() {
     })
     setShowForm(false)
     showToast(`Invitation envoyée à ${saved.email}`, true)
+  }
+
+  // Appelé après un envoi en lot : on fusionne les invitations créées sans
+  // fermer la popup (laisse l'admin voir le récap).
+  const handleBulkDone = (invites: Invite[], okCount: number) => {
+    setItems((prev) => {
+      const map = new Map(prev.map((it) => [it.id, it]))
+      for (const inv of invites) map.set(inv.id, inv)
+      return Array.from(map.values()).sort((a, b) =>
+        (b.created_at ?? '').localeCompare(a.created_at ?? ''),
+      )
+    })
+    if (okCount > 0) {
+      showToast(`${okCount} invitation${okCount > 1 ? 's' : ''} envoyée${okCount > 1 ? 's' : ''}`, true)
+    }
   }
 
   const handleResend = async (inv: Invite) => {
@@ -254,7 +271,13 @@ export function AdminInvitesPage() {
         </ul>
       )}
 
-      {showForm && <InviteForm onClose={() => setShowForm(false)} onSent={handleSent} />}
+      {showForm && (
+        <InviteForm
+          onClose={() => setShowForm(false)}
+          onSent={handleSent}
+          onBulkDone={handleBulkDone}
+        />
+      )}
 
       {toast && (
         <div
@@ -270,126 +293,429 @@ export function AdminInvitesPage() {
   )
 }
 
-function InviteForm({ onClose, onSent }: { onClose: () => void; onSent: (inv: Invite) => void }) {
-  const [email, setEmail] = useState('')
-  const [firstName, setFirstName] = useState('')
+// Extrait tous les emails d'une chaîne libre (coller depuis Excel, Notion,
+// une liste séparée par virgules, retours à la ligne, point-virgule…).
+// Retourne {valid, invalid} dédupliqués en minuscules.
+const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+const EMAIL_FULL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function parseEmailList(raw: string): { valid: string[]; invalid: string[] } {
+  // On regarde d'abord ligne par ligne / token par token (pour isoler les
+  // morceaux qui ne contiennent PAS d'arobase et les signaler comme invalides).
+  const tokens = raw
+    .split(/[\s,;]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+
+  const valid = new Set<string>()
+  const invalid: string[] = []
+
+  for (const t of tokens) {
+    const matches = t.match(EMAIL_RE)
+    if (!matches) {
+      invalid.push(t)
+      continue
+    }
+    for (const m of matches) {
+      const low = m.toLowerCase()
+      if (EMAIL_FULL_RE.test(low)) valid.add(low)
+      else invalid.push(m)
+    }
+  }
+
+  return { valid: Array.from(valid), invalid }
+}
+
+type Mode = 'single' | 'bulk'
+type BulkRowStatus = 'pending' | 'sending' | 'ok' | 'error'
+interface BulkRow {
+  email: string
+  status: BulkRowStatus
+  message?: string
+}
+
+function InviteForm({
+  onClose,
+  onSent,
+  onBulkDone,
+}: {
+  onClose: () => void
+  onSent: (inv: Invite) => void
+  onBulkDone: (invites: Invite[], okCount: number) => void
+}) {
+  const [mode, setMode] = useState<Mode>('single')
+
+  // --- champs partagés -----------------------------------------------------
   const [credits, setCredits] = useState<string>('20')
   const [notes, setNotes] = useState('')
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const submit = async (e: FormEvent) => {
+  // --- mode "un email" -----------------------------------------------------
+  const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [singleSending, setSingleSending] = useState(false)
+  const [singleError, setSingleError] = useState<string | null>(null)
+
+  // --- mode "en lot" -------------------------------------------------------
+  const [bulkText, setBulkText] = useState('')
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([])
+  const [bulkSending, setBulkSending] = useState(false)
+  const [bulkDone, setBulkDone] = useState(false)
+
+  const parsed = useMemo(() => parseEmailList(bulkText), [bulkText])
+  const sending = singleSending || bulkSending
+
+  const submitSingle = async (e: FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setSingleError(null)
     const emailTrim = email.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) return setError('Email invalide.')
+    if (!EMAIL_FULL_RE.test(emailTrim)) return setSingleError('Email invalide.')
     const n = Number(credits)
-    if (!Number.isFinite(n) || n < 1 || n > 500) return setError('Crédits : nombre entre 1 et 500.')
-    setSending(true)
+    if (!Number.isFinite(n) || n < 1 || n > 500) return setSingleError('Crédits : nombre entre 1 et 500.')
+    setSingleSending(true)
     const { data, error } = await sendInvite({
       email: emailTrim,
       first_name: firstName.trim() || undefined,
       credits_granted: Math.round(n),
       notes: notes.trim() || undefined,
     })
-    setSending(false)
-    if (error || !data) return setError(error ?? 'Erreur.')
+    setSingleSending(false)
+    if (error || !data) return setSingleError(error ?? 'Erreur.')
     onSent(data.invite)
+  }
+
+  const startBulk = async (e: FormEvent) => {
+    e.preventDefault()
+    const n = Number(credits)
+    if (!Number.isFinite(n) || n < 1 || n > 500) {
+      return
+    }
+    if (parsed.valid.length === 0) return
+
+    const initial: BulkRow[] = parsed.valid.map((em) => ({ email: em, status: 'pending' }))
+    setBulkRows(initial)
+    setBulkSending(true)
+    setBulkDone(false)
+
+    const sentInvites: Invite[] = []
+    let okCount = 0
+
+    // Envoi séquentiel : Resend accepte volontiers, mais on reste prudent
+    // pour éviter un rate limit sur l'edge function (et laisser l'admin
+    // voir la progression). ~1 par 400ms = ~2.5/s.
+    for (let i = 0; i < initial.length; i++) {
+      const row = initial[i]
+      setBulkRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, status: 'sending' } : r)))
+
+      const { data, error } = await sendInvite({
+        email: row.email,
+        credits_granted: Math.round(n),
+        notes: notes.trim() || undefined,
+      })
+
+      if (error || !data) {
+        setBulkRows((prev) =>
+          prev.map((r, idx) =>
+            idx === i ? { ...r, status: 'error', message: error ?? 'Erreur inconnue' } : r,
+          ),
+        )
+      } else {
+        sentInvites.push(data.invite)
+        okCount++
+        setBulkRows((prev) =>
+          prev.map((r, idx) => (idx === i ? { ...r, status: 'ok' } : r)),
+        )
+      }
+
+      // petite pause pour ne pas marteler l'API
+      if (i < initial.length - 1) await new Promise((r) => setTimeout(r, 400))
+    }
+
+    setBulkSending(false)
+    setBulkDone(true)
+    onBulkDone(sentInvites, okCount)
+  }
+
+  const resetBulk = () => {
+    setBulkText('')
+    setBulkRows([])
+    setBulkDone(false)
   }
 
   return (
     <div className="modal-overlay">
-      <form onSubmit={submit} className="modal-panel max-w-md">
+      <div className="modal-panel max-w-xl">
         <header className="flex items-center justify-between gap-3 border-b border-ink-100 p-5">
           <h2 className="text-lg font-semibold text-ink-900">Nouvelle invitation</h2>
           <button
             type="button"
             onClick={onClose}
             disabled={sending}
-            className="text-ink-400 hover:text-ink-800"
+            className="text-ink-400 hover:text-ink-800 disabled:opacity-50"
             aria-label="Fermer"
           >
             <X size={20} />
           </button>
         </header>
 
-        <div className="space-y-4 p-5">
-          <div>
-            <label className="label">Email *</label>
-            <input
-              type="email"
-              required
-              className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="freelance@example.com"
-            />
-          </div>
-          <div>
-            <label className="label">Prénom (optionnel)</label>
-            <input
-              className="input"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Pour personnaliser l'email"
-            />
-          </div>
-          <div>
-            <label className="label">Crédits attribués *</label>
-            <input
-              type="number"
-              min="1"
-              max="500"
-              required
-              className="input max-w-[140px]"
-              value={credits}
-              onChange={(e) => setCredits(e.target.value)}
-            />
-            <p className="mt-1 text-[11px] text-ink-400">
-              Entre 1 et 500. Iront dans son solde recherche prospects + génération IA.
-            </p>
-          </div>
-          <div>
-            <label className="label">Notes internes (optionnel)</label>
-            <textarea
-              className="input min-h-[60px] text-sm"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex : contact LinkedIn, référé par X…"
-            />
-            <p className="mt-1 text-[11px] text-ink-400">Visible uniquement par toi dans l'admin.</p>
-          </div>
-
-          <div className="rounded-lg border border-warn-200 bg-warn-50 px-3 py-2 text-xs text-warn-700">
-            L'email d'invitation sera envoyé immédiatement depuis <strong>hello@topcloz.com</strong> avec un lien magique. Le compte est pré-marqué comme payé.
-          </div>
-
-          {error && (
-            <p className="rounded border border-danger-500/30 bg-danger-500/5 px-3 py-2 text-sm text-danger-600">
-              {error}
-            </p>
-          )}
+        {/* Onglets : un email vs envoi en lot */}
+        <div className="grid grid-cols-2 gap-1 border-b border-ink-100 bg-cream-100 p-1.5">
+          {([
+            { v: 'single', label: 'Un email', icon: Mail },
+            { v: 'bulk', label: 'En lot', icon: Users },
+          ] as const).map((t) => {
+            const Icon = t.icon
+            const active = mode === t.v
+            return (
+              <button
+                key={t.v}
+                type="button"
+                disabled={sending}
+                onClick={() => setMode(t.v)}
+                className={`flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-medium transition disabled:opacity-50 ${
+                  active ? 'bg-cream-50 text-ink-900 shadow-xs' : 'text-ink-500 hover:text-ink-800'
+                }`}
+              >
+                <Icon size={14} />
+                {t.label}
+              </button>
+            )
+          })}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-ink-100 p-5">
-          <button type="button" onClick={onClose} disabled={sending} className="btn-secondary">
-            Annuler
-          </button>
-          <button type="submit" disabled={sending} className="btn-primary">
-            {sending ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Envoi…
-              </>
-            ) : (
-              <>
+        {/* ------------------------------------------------ MODE SINGLE */}
+        {mode === 'single' && (
+          <form onSubmit={submitSingle}>
+            <div className="space-y-4 p-5">
+              <div>
+                <label className="label">Email *</label>
+                <input
+                  type="email"
+                  required
+                  className="input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="freelance@example.com"
+                />
+              </div>
+              <div>
+                <label className="label">Prénom (optionnel)</label>
+                <input
+                  className="input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Pour personnaliser l'email"
+                />
+              </div>
+              <SharedFields credits={credits} setCredits={setCredits} notes={notes} setNotes={setNotes} />
+
+              {singleError && (
+                <p className="rounded border border-danger-500/30 bg-danger-500/5 px-3 py-2 text-sm text-danger-600">
+                  {singleError}
+                </p>
+              )}
+            </div>
+
+            <footer className="flex items-center justify-end gap-2 border-t border-ink-100 p-5">
+              <button type="button" onClick={onClose} disabled={singleSending} className="btn-secondary">
+                Annuler
+              </button>
+              <button type="submit" disabled={singleSending} className="btn-primary">
+                {singleSending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Envoi…
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} />
+                    Envoyer l'invitation
+                  </>
+                )}
+              </button>
+            </footer>
+          </form>
+        )}
+
+        {/* ------------------------------------------------ MODE BULK */}
+        {mode === 'bulk' && !bulkDone && (
+          <form onSubmit={startBulk}>
+            <div className="space-y-4 p-5">
+              <div>
+                <label className="label">Colle ta liste d'emails *</label>
+                <textarea
+                  className="input min-h-[140px] font-mono text-sm"
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  placeholder={'alice@example.com\nbob@example.com, charlie@example.com\n…'}
+                  disabled={bulkSending}
+                  autoFocus
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  {parsed.valid.length > 0 && (
+                    <span className="rounded-full bg-success-50 px-2.5 py-1 font-medium text-success-700">
+                      {parsed.valid.length} email{parsed.valid.length > 1 ? 's' : ''} détecté{parsed.valid.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {parsed.invalid.length > 0 && (
+                    <span className="flex items-center gap-1 rounded-full bg-warn-50 px-2.5 py-1 font-medium text-warn-700">
+                      <AlertCircle size={11} />
+                      {parsed.invalid.length} ignoré{parsed.invalid.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {parsed.valid.length === 0 && (
+                    <span className="text-ink-400">
+                      Virgules, retours à la ligne, espaces, point-virgules — tout fonctionne.
+                    </span>
+                  )}
+                </div>
+                {parsed.invalid.length > 0 && (
+                  <p className="mt-1 break-words text-[11px] text-warn-700">
+                    Ignorés : {parsed.invalid.slice(0, 10).join(', ')}
+                    {parsed.invalid.length > 10 ? '…' : ''}
+                  </p>
+                )}
+              </div>
+
+              <SharedFields credits={credits} setCredits={setCredits} notes={notes} setNotes={setNotes} />
+
+              <div className="rounded-lg border border-warn-200 bg-warn-50 px-3 py-2 text-xs text-warn-700">
+                Chaque email recevra une invitation séparée avec les mêmes crédits et la même note.
+                L'envoi est séquentiel (~1 toutes les 400 ms) ; garde la fenêtre ouverte jusqu'à la fin.
+              </div>
+            </div>
+
+            <footer className="flex items-center justify-end gap-2 border-t border-ink-100 p-5">
+              <button type="button" onClick={onClose} disabled={bulkSending} className="btn-secondary">
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={bulkSending || parsed.valid.length === 0}
+                className="btn-primary"
+              >
                 <Check size={16} />
-                Envoyer l'invitation
-              </>
-            )}
-          </button>
-        </footer>
-      </form>
+                Envoyer {parsed.valid.length > 0 ? `à ${parsed.valid.length}` : ''} invité{parsed.valid.length > 1 ? 's' : ''}
+              </button>
+            </footer>
+          </form>
+        )}
+
+        {/* ------------------------------------------------ PROGRESSION BULK */}
+        {mode === 'bulk' && (bulkSending || bulkDone) && (
+          <>
+            <div className="space-y-3 p-5">
+              <BulkProgress rows={bulkRows} sending={bulkSending} />
+            </div>
+            <footer className="flex items-center justify-end gap-2 border-t border-ink-100 p-5">
+              {!bulkSending && (
+                <button type="button" onClick={resetBulk} className="btn-secondary">
+                  Envoyer un autre lot
+                </button>
+              )}
+              <button type="button" onClick={onClose} disabled={bulkSending} className="btn-primary">
+                {bulkSending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Envoi en cours…
+                  </>
+                ) : (
+                  <>Fermer</>
+                )}
+              </button>
+            </footer>
+          </>
+        )}
+      </div>
     </div>
+  )
+}
+
+function SharedFields({
+  credits, setCredits, notes, setNotes,
+}: {
+  credits: string
+  setCredits: (v: string) => void
+  notes: string
+  setNotes: (v: string) => void
+}) {
+  return (
+    <>
+      <div>
+        <label className="label">Crédits attribués *</label>
+        <input
+          type="number"
+          min="1"
+          max="500"
+          required
+          className="input max-w-[140px]"
+          value={credits}
+          onChange={(e) => setCredits(e.target.value)}
+        />
+        <p className="mt-1 text-[11px] text-ink-400">
+          Entre 1 et 500. Appliqués à chaque invité du lot.
+        </p>
+      </div>
+      <div>
+        <label className="label">Notes internes (optionnel)</label>
+        <textarea
+          className="input min-h-[60px] text-sm"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Ex : promo early users oct 2026…"
+        />
+        <p className="mt-1 text-[11px] text-ink-400">
+          Visible uniquement par toi dans l'admin.
+        </p>
+      </div>
+    </>
+  )
+}
+
+function BulkProgress({ rows, sending }: { rows: BulkRow[]; sending: boolean }) {
+  const okCount = rows.filter((r) => r.status === 'ok').length
+  const errCount = rows.filter((r) => r.status === 'error').length
+  const total = rows.length
+  const pct = total === 0 ? 0 : Math.round(((okCount + errCount) / total) * 100)
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-ink-900">
+            {sending ? 'Envoi en cours…' : 'Terminé'}
+          </p>
+          <p className="text-xs text-ink-500">
+            {okCount} / {total} envoyé{okCount > 1 ? 's' : ''}
+            {errCount > 0 && ` · ${errCount} échec${errCount > 1 ? 's' : ''}`}
+          </p>
+        </div>
+        <span className="font-mono text-lg font-semibold text-ink-800">{pct}%</span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-cream-200">
+        <div
+          className="h-full bg-accent-500 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <ul className="max-h-[280px] space-y-1 overflow-y-auto rounded border border-ink-100 bg-cream-50 p-2 text-xs">
+        {rows.map((r) => (
+          <li key={r.email} className="flex items-center gap-2 px-2 py-1">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+              {r.status === 'pending' && <span className="h-1.5 w-1.5 rounded-full bg-ink-300" />}
+              {r.status === 'sending' && <Loader2 size={13} className="animate-spin text-accent-500" />}
+              {r.status === 'ok' && <Check size={13} className="text-success-500" />}
+              {r.status === 'error' && <AlertCircle size={13} className="text-danger-500" />}
+            </span>
+            <span className="min-w-0 flex-1 truncate font-mono">{r.email}</span>
+            {r.message && (
+              <span className="shrink-0 truncate text-[11px] text-danger-600" title={r.message}>
+                {r.message.slice(0, 40)}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
