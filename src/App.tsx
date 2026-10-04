@@ -30,6 +30,7 @@ import { AdminLogsPage } from '@/pages/admin/AdminLogsPage'
 import { AdminResourcesPage } from '@/pages/admin/AdminResourcesPage'
 import { AdminInvitesPage } from '@/pages/admin/AdminInvitesPage'
 import { SetPasswordPage } from '@/pages/auth/SetPasswordPage'
+import { ScrollToTop } from '@/components/ScrollToTop'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -48,7 +49,9 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/p/:slug" element={<PublicPortfolioPage />} />
 
       {/* Espace admin — layout et protection dédiés */}
@@ -112,6 +115,7 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }

@@ -43,6 +43,9 @@ export interface Profile {
   is_suspended: boolean
   suspended_at: string | null
   suspension_reason: string | null
+  // true pour un invité qui n'a pas encore défini son mot de passe. Mis à true
+  // par le trigger apply_invite_on_signup, mis à false par SetPasswordPage.
+  needs_password_setup: boolean
   created_at: string
   updated_at: string
 }

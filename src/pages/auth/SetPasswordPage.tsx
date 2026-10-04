@@ -31,8 +31,20 @@ export function SetPasswordPage() {
       password,
       data: { needs_password_setup: false },
     })
+    if (updateErr) {
+      setLoading(false)
+      return setError(updateErr.message)
+    }
+    // On remet aussi le flag à false côté `profiles` (ceinture + bretelles).
+    // Si la colonne n'existe pas encore (migration non appliquée), l'update
+    // échoue silencieusement, ce qui est le comportement attendu.
+    if (user?.id) {
+      await supabase
+        .from('profiles')
+        .update({ needs_password_setup: false })
+        .eq('user_id', user.id)
+    }
     setLoading(false)
-    if (updateErr) return setError(updateErr.message)
     await refreshProfile()
     navigate('/onboarding', { replace: true })
   }
