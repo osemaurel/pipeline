@@ -1,26 +1,30 @@
 -- =====================================================================
 --  12-supabase-fix-invite-password-flow.sql
 -- ---------------------------------------------------------------------
+--  ⚠️  Déjà appliquée sur le projet pipeline (cwbvzsozyoybypgnnuds)
+--      via le connecteur Supabase MCP. Conservée pour historique et
+--      pour pouvoir rejouer sur une base vierge.
+--
 --  Objectif
---    Renforcer le flow d'invitation : garantir qu'un invité est bien
---    redirigé vers /set-password AVANT /onboarding, même si l'edge
---    function `send-invite` n'a pas été redéployée.
+--    Corriger le flow d'invitation : garantir qu'un invité :
+--      1. a bien une ligne dans `profiles` (avant, le trigger faisait
+--         un UPDATE sur une ligne inexistante → profil orphelin) ;
+--      2. est redirigé vers /set-password avant /onboarding grâce au
+--         flag `profiles.needs_password_setup`.
 --
---  Pourquoi
---    `ProtectedRoute` s'appuyait uniquement sur
---    `auth.users.raw_user_meta_data->>'needs_password_setup'`, qui est
---    posé par l'edge function. Si celle-ci n'est pas à jour, le flag
---    manque et l'invité tombe direct sur le dashboard.
+--  Contexte
+--    L'edge function `send-invite` crée l'utilisateur Auth via
+--    admin.auth.admin.createUser → cela déclenche le trigger
+--    `apply_invite_on_signup`. L'ancien trigger faisait un UPDATE
+--    sur public.profiles, mais aucune ligne n'existait encore (pas
+--    de trigger `handle_new_user`), donc rien n'était écrit.
 --
---  Ce que fait cette migration
---    1. Ajoute `profiles.needs_password_setup boolean not null default false`.
---    2. Met à jour `apply_invite_on_signup` pour positionner ce flag à
---       true quand un nouvel utilisateur signe via une invitation.
---    3. Backfill : passe `needs_password_setup = true` sur les profils
---       actuellement liés à une invitation `admin_invites.status = 'sent'`
---       (invité pas encore passé par /set-password).
---
---  À exécuter dans Supabase → SQL Editor.
+--  Changements
+--    1. ALTER profiles ADD COLUMN needs_password_setup boolean.
+--    2. CREATE OR REPLACE apply_invite_on_signup : INSERT ON CONFLICT
+--       DO UPDATE au lieu de UPDATE (crée le profil si absent).
+--    3. Backfill des invités déjà envoyés (status='sent') sans profil
+--       + leurs crédits dans search_credits.
 -- =====================================================================
 
 -- 1. Colonne sur profiles ----------------------------------------------
@@ -32,79 +36,58 @@ comment on column public.profiles.needs_password_setup is
   'Posé par apply_invite_on_signup, remis à false par /set-password.';
 
 -- 2. Trigger : apply_invite_on_signup ----------------------------------
--- On préserve le comportement existant (link admin_invites.user_id,
--- status=accepted, has_paid=true, crédits) et on ajoute l'écriture du
--- flag needs_password_setup=true dans profiles.
 create or replace function public.apply_invite_on_signup()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
-as $$
-declare
-  v_invite public.admin_invites%rowtype;
+set search_path = 'public'
+as $function$
+declare inv record;
 begin
-  -- Chercher l'invitation correspondant à l'email du nouvel utilisateur
-  select *
-    into v_invite
-    from public.admin_invites
-   where lower(email) = lower(new.email)
-   limit 1;
+  select * into inv from public.admin_invites
+   where lower(email) = lower(new.email) and status in ('pending','sent') limit 1;
+  if not found then return new; end if;
 
-  if v_invite.id is null then
-    -- Pas d'invitation : rien à faire (signup libre, si réactivé).
-    return new;
-  end if;
-
-  -- Lie l'invitation à l'utilisateur, marque comme acceptée
   update public.admin_invites
-     set user_id     = new.id,
-         status      = 'accepted',
-         accepted_at = coalesce(accepted_at, now())
-   where id = v_invite.id;
+     set status = 'accepted', user_id = new.id, accepted_at = now()
+   where id = inv.id;
 
-  -- Débloque immédiatement l'accès payant et crédite les recherches
-  update public.profiles
-     set has_paid              = true,
-         paid_at               = coalesce(paid_at, now()),
-         payment_provider      = coalesce(payment_provider, 'invite'),
-         needs_password_setup  = true  -- <<< NOUVEAU
-   where user_id = new.id;
+  -- Crée le profil s'il n'existe pas (cas invité), ou pose juste les flags
+  -- (cas signup normal où le frontend l'a déjà inséré).
+  insert into public.profiles (user_id, first_name, last_name, email,
+                               has_paid, paid_at, needs_password_setup)
+  values (new.id, coalesce(inv.first_name, ''), '', new.email,
+          true, now(), true)
+  on conflict (user_id) do update set
+      has_paid              = true,
+      paid_at               = coalesce(public.profiles.paid_at, now()),
+      needs_password_setup  = true;
 
-  -- Crédits de recherche : on utilise la RPC existante (idempotente)
-  perform public.init_search_credits(new.id);
-
-  -- Ajout des crédits accordés par l'admin, si > 0
-  if v_invite.credits_granted is not null and v_invite.credits_granted > 0 then
-    update public.profiles
-       set search_credits_remaining = coalesce(search_credits_remaining, 0) + v_invite.credits_granted
-     where user_id = new.id;
-  end if;
+  insert into public.search_credits (user_id, credits_remaining, credits_used_total)
+  values (new.id, inv.credits_granted, 0)
+  on conflict (user_id) do update set credits_remaining = excluded.credits_remaining;
 
   return new;
 end;
-$$;
+$function$;
 
--- Trigger reposé pour que la version mise à jour soit active
-drop trigger if exists apply_invite_on_signup_trg on auth.users;
-create trigger apply_invite_on_signup_trg
-  after insert on auth.users
-  for each row execute function public.apply_invite_on_signup();
+-- 3. Backfill : invités déjà créés mais sans profil --------------------
+insert into public.profiles (user_id, first_name, last_name, email,
+                             has_paid, paid_at, needs_password_setup)
+select i.user_id, coalesce(i.first_name, ''), '', u.email,
+       true, now(), true
+from public.admin_invites i
+join auth.users u on u.id = i.user_id
+where i.status = 'sent'
+  and i.user_id is not null
+  and not exists (select 1 from public.profiles p where p.user_id = i.user_id)
+on conflict (user_id) do update set needs_password_setup = true;
 
--- 3. Backfill : invités déjà créés mais pas encore passés par /set-password
---    (admin_invites.status = 'sent' + user_id non null)
-update public.profiles p
-   set needs_password_setup = true
-  from public.admin_invites i
- where i.user_id = p.user_id
-   and i.status  = 'sent'
-   and p.needs_password_setup = false;
-
--- =====================================================================
---  Après exécution
---    - Redéployer l'edge function `send-invite` (le flag user_metadata
---      reste utile en bretelles).
---    - Dans Supabase Auth → URL Configuration : vérifier que
---      SITE_URL = https://topcloz.com et que /dashboard est bien dans
---      les Redirect URLs.
--- =====================================================================
+-- 4. Backfill des crédits manquants
+insert into public.search_credits (user_id, credits_remaining, credits_used_total)
+select i.user_id, i.credits_granted, 0
+from public.admin_invites i
+where i.status = 'sent'
+  and i.user_id is not null
+  and not exists (select 1 from public.search_credits s where s.user_id = i.user_id)
+on conflict (user_id) do nothing;

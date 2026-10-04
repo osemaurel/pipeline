@@ -1,25 +1,37 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Loader2, Lock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 
-// Page affichée à l'invité quand il arrive via le magic link, pour qu'il
-// définisse son mot de passe. Après validation, redirige vers l'onboarding
-// (gating standard des nouveaux comptes via onboarding_completed=false).
+// Page affichée à l'invité quand il arrive via le magic link. Demande
+// prénom + nom (s'ils n'ont pas déjà été renseignés par l'invitation) et
+// mot de passe, puis redirige vers l'onboarding.
 export function SetPasswordPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const profile = useAuthStore((s) => s.profile)
   const refreshProfile = useAuthStore((s) => s.refreshProfile)
 
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Pré-remplit avec ce qu'on a (invitation ou signup frontend).
+  useEffect(() => {
+    if (profile?.first_name) setFirstName(profile.first_name)
+    if (profile?.last_name) setLastName(profile.last_name)
+  }, [profile?.first_name, profile?.last_name])
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!firstName.trim() || !lastName.trim()) {
+      return setError('Renseigne ton prénom et ton nom.')
+    }
     if (password.length < 8) {
       return setError('Ton mot de passe doit faire au moins 8 caractères.')
     }
@@ -27,6 +39,7 @@ export function SetPasswordPage() {
       return setError('Les deux mots de passe ne correspondent pas.')
     }
     setLoading(true)
+
     const { error: updateErr } = await supabase.auth.updateUser({
       password,
       data: { needs_password_setup: false },
@@ -35,15 +48,20 @@ export function SetPasswordPage() {
       setLoading(false)
       return setError(updateErr.message)
     }
-    // On remet aussi le flag à false côté `profiles` (ceinture + bretelles).
-    // Si la colonne n'existe pas encore (migration non appliquée), l'update
-    // échoue silencieusement, ce qui est le comportement attendu.
+
+    // Mise à jour du profil : prénom/nom + flag côté profiles (ceinture
+    // + bretelles si l'edge function n'était pas à jour).
     if (user?.id) {
       await supabase
         .from('profiles')
-        .update({ needs_password_setup: false })
+        .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          needs_password_setup: false,
+        })
         .eq('user_id', user.id)
     }
+
     setLoading(false)
     await refreshProfile()
     navigate('/onboarding', { replace: true })
@@ -57,16 +75,40 @@ export function SetPasswordPage() {
         </div>
         <h1 className="text-xl font-semibold text-ink-900">Bienvenue sur TopCloz</h1>
         <p className="mt-1.5 text-sm text-ink-500">
-          Définis ton mot de passe pour pouvoir te reconnecter sans le lien email.
+          Dis-nous qui tu es et choisis un mot de passe pour te reconnecter plus tard.
         </p>
         {user?.email && (
-          <p className="mt-3 inline-block rounded-full bg-cream-200 px-3 py-1 font-mono text-xs text-ink-700">
+          <p className="mt-3 inline-block max-w-full truncate rounded-full bg-cream-200 px-3 py-1 font-mono text-xs text-ink-700">
             {user.email}
           </p>
         )}
       </div>
 
       <form onSubmit={submit} className="space-y-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label">Prénom</label>
+            <input
+              className="input"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              autoComplete="given-name"
+              required
+              autoFocus={!firstName}
+            />
+          </div>
+          <div>
+            <label className="label">Nom</label>
+            <input
+              className="input"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              autoComplete="family-name"
+              required
+            />
+          </div>
+        </div>
+
         <div>
           <label className="label">Mot de passe</label>
           <input
@@ -77,7 +119,6 @@ export function SetPasswordPage() {
             autoComplete="new-password"
             minLength={8}
             required
-            autoFocus
           />
           <p className="mt-1 text-[11px] text-ink-400">Minimum 8 caractères.</p>
         </div>
