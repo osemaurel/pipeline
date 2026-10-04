@@ -4,6 +4,8 @@ import {
   Check,
   Clock,
   Copy,
+  Eye,
+  EyeOff,
   Loader2,
   Mail,
   Plus,
@@ -39,13 +41,70 @@ const STATUS_COLOR: Record<InviteStatus, string> = {
   revoked: 'bg-danger-50 text-danger-700',
 }
 
-const fmtDate = (iso: string | null) =>
+const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+const fmtDateTime = (iso: string | null | undefined) =>
+  iso
+    ? new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—'
+
+// Résume l'état d'accès d'un invité à partir des infos auth + profil.
+//   - "Jamais ouvert" : last_sign_in_at est null → l'invité n'a pas cliqué le lien.
+//   - "Lien ouvert, mdp à définir" : connecté au moins une fois mais needs_password_setup=true.
+//   - "Onboarding en cours" : mdp défini mais onboarding pas terminé.
+//   - "Actif" : tout est OK.
+type AccessState =
+  | { kind: 'never'; label: string; color: string; icon: typeof EyeOff }
+  | { kind: 'opened'; label: string; color: string; icon: typeof Eye; at: string }
+  | { kind: 'onboarding'; label: string; color: string; icon: typeof UserCheck; at: string }
+  | { kind: 'active'; label: string; color: string; icon: typeof UserCheck; at: string }
+
+function describeAccess(inv: Invite): AccessState | null {
+  // RPC indisponible : on ne sait rien, on n'affiche pas le badge.
+  if (inv.last_sign_in_at === undefined) return null
+
+  if (!inv.last_sign_in_at) {
+    return {
+      kind: 'never',
+      label: 'Lien jamais ouvert',
+      color: 'bg-ink-100 text-ink-500',
+      icon: EyeOff,
+    }
+  }
+  const at = fmtDateTime(inv.last_sign_in_at)
+  if (inv.needs_password_setup) {
+    return {
+      kind: 'opened',
+      label: `Lien ouvert · mot de passe à définir`,
+      color: 'bg-warn-50 text-warn-700',
+      icon: Eye,
+      at,
+    }
+  }
+  if (inv.onboarding_completed === false) {
+    return {
+      kind: 'onboarding',
+      label: `Onboarding en cours`,
+      color: 'bg-accent-500/10 text-accent-700',
+      icon: UserCheck,
+      at,
+    }
+  }
+  return {
+    kind: 'active',
+    label: `Actif`,
+    color: 'bg-success-50 text-success-700',
+    icon: UserCheck,
+    at,
+  }
+}
 
 export function AdminInvitesPage() {
   const [items, setItems] = useState<Invite[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [accessFilter, setAccessFilter] = useState<'all' | 'never' | 'opened' | 'active'>('all')
   const [showForm, setShowForm] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
@@ -60,14 +119,36 @@ export function AdminInvitesPage() {
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return items
-    return items.filter(
-      (it) =>
-        it.email.toLowerCase().includes(q) ||
-        (it.first_name ?? '').toLowerCase().includes(q) ||
-        (it.notes ?? '').toLowerCase().includes(q),
-    )
-  }, [items, search])
+    return items.filter((it) => {
+      if (q) {
+        const matchQuery =
+          it.email.toLowerCase().includes(q) ||
+          (it.first_name ?? '').toLowerCase().includes(q) ||
+          (it.notes ?? '').toLowerCase().includes(q)
+        if (!matchQuery) return false
+      }
+      if (accessFilter === 'all') return true
+      const a = describeAccess(it)
+      if (!a) return true // RPC indisponible : on n'exclut pas
+      if (accessFilter === 'never') return a.kind === 'never'
+      if (accessFilter === 'opened') return a.kind === 'opened' || a.kind === 'onboarding'
+      if (accessFilter === 'active') return a.kind === 'active'
+      return true
+    })
+  }, [items, search, accessFilter])
+
+  // Compteurs par état d'accès (pour les boutons de filtre)
+  const accessCounts = useMemo(() => {
+    const c = { never: 0, opened: 0, active: 0 }
+    for (const it of items) {
+      const a = describeAccess(it)
+      if (!a) continue
+      if (a.kind === 'never') c.never++
+      else if (a.kind === 'opened' || a.kind === 'onboarding') c.opened++
+      else if (a.kind === 'active') c.active++
+    }
+    return c
+  }, [items])
 
   const counts = useMemo(() => {
     const m: Record<InviteStatus, number> = { pending: 0, sent: 0, accepted: 0, expired: 0, revoked: 0 }
@@ -184,6 +265,34 @@ export function AdminInvitesPage() {
         </div>
       </div>
 
+      {/* Filtre par état d'accès */}
+      <div className="no-scrollbar mb-4 flex gap-1.5 overflow-x-auto sm:flex-wrap">
+        {([
+          { v: 'all', label: 'Toutes', color: 'bg-ink-900 text-white', count: items.length },
+          { v: 'never', label: 'Jamais ouvert', color: 'bg-ink-500 text-white', count: accessCounts.never },
+          { v: 'opened', label: 'Lien ouvert', color: 'bg-warn-500 text-white', count: accessCounts.opened },
+          { v: 'active', label: 'Actifs', color: 'bg-success-500 text-white', count: accessCounts.active },
+        ] as const).map((f) => {
+          const active = accessFilter === f.v
+          return (
+            <button
+              key={f.v}
+              onClick={() => setAccessFilter(f.v)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                active
+                  ? `${f.color} border-transparent`
+                  : 'border-ink-200 bg-cream-50 text-ink-600 hover:bg-cream-100'
+              }`}
+            >
+              {f.label}
+              <span className={`ml-1.5 font-mono ${active ? 'opacity-80' : 'text-ink-400'}`}>
+                {f.count}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       {loading ? (
         <div className="rounded-lg border border-ink-100 bg-cream-50 py-16 text-center text-sm text-ink-400">
           Chargement…
@@ -198,30 +307,68 @@ export function AdminInvitesPage() {
         <ul className="divide-y divide-ink-100 overflow-hidden rounded-lg border border-ink-100 bg-cream-50">
           {visible.map((inv) => (
             <li key={inv.id} className="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-500/10 text-accent-600">
-                {inv.status === 'accepted' ? <UserCheck size={17} /> : <Mail size={16} />}
-              </span>
+              {(() => {
+                const access = describeAccess(inv)
+                const Icon = access?.icon ?? (inv.status === 'accepted' ? UserCheck : Mail)
+                const iconColor =
+                  access?.kind === 'active'
+                    ? 'bg-success-500/10 text-success-600'
+                    : access?.kind === 'opened' || access?.kind === 'onboarding'
+                      ? 'bg-warn-500/10 text-warn-600'
+                      : access?.kind === 'never'
+                        ? 'bg-ink-100 text-ink-400'
+                        : 'bg-accent-500/10 text-accent-600'
+                return (
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconColor}`}>
+                    <Icon size={17} />
+                  </span>
+                )
+              })()}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate text-sm font-semibold text-ink-900">
                     {inv.first_name ? `${inv.first_name} — ` : ''}
                     {inv.email}
                   </p>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLOR[inv.status]}`}>
-                    {STATUS_LABEL[inv.status]}
-                  </span>
+                  {(() => {
+                    const access = describeAccess(inv)
+                    if (!access) {
+                      // RPC indisponible : on retombe sur le statut de la table.
+                      return (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLOR[inv.status]}`}>
+                          {STATUS_LABEL[inv.status]}
+                        </span>
+                      )
+                    }
+                    return (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${access.color}`}
+                        title={access.kind !== 'never' ? `Dernière connexion : ${access.at}` : undefined}
+                      >
+                        {access.label}
+                      </span>
+                    )
+                  })()}
+                  {inv.status === 'revoked' && (
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_COLOR.revoked}`}>
+                      Révoquée
+                    </span>
+                  )}
                   <span className="font-mono text-xs text-accent-700">
                     {inv.credits_granted} crédits
                   </span>
                 </div>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
                   <Clock size={11} className="shrink-0" />
-                  {inv.status === 'accepted'
-                    ? `Acceptée le ${fmtDate(inv.accepted_at)}`
-                    : inv.sent_at
-                      ? `Envoyée le ${fmtDate(inv.sent_at)}`
-                      : `Créée le ${fmtDate(inv.created_at)}`}
-                  {inv.last_resent_at && (
+                  {inv.sent_at
+                    ? `Envoyée le ${fmtDate(inv.sent_at)}`
+                    : `Créée le ${fmtDate(inv.created_at)}`}
+                  {inv.last_sign_in_at && (
+                    <>
+                      {' · '}Dernière connexion : {fmtDate(inv.last_sign_in_at)}
+                    </>
+                  )}
+                  {!inv.last_sign_in_at && inv.last_resent_at && (
                     <>
                       {' · '}Dernier renvoi : {fmtDate(inv.last_resent_at)}
                     </>
