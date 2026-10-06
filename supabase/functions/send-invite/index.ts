@@ -24,9 +24,22 @@ interface InviteBody {
   resend?: boolean
 }
 
+// Génère un mot de passe temporaire lisible (sans caractères ambigus 0/O/1/l/I)
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+  const bytes = new Uint8Array(14)
+  crypto.getRandomValues(bytes)
+  let out = ""
+  for (const b of bytes) out += chars[b % chars.length]
+  // Format en 3 blocs lisibles : "AbCdEf-GhJkMn-pQ23"
+  return `${out.slice(0, 6)}-${out.slice(6, 12)}-${out.slice(12, 14)}23`
+}
+
 function buildEmailHtml(opts: {
   firstName: string | null
-  magicLink: string
+  loginUrl: string
+  email: string
+  tempPassword: string
   credits: number
 }): string {
   const greeting = opts.firstName ? `Salut ${opts.firstName},` : "Bonjour,"
@@ -62,25 +75,36 @@ function buildEmailHtml(opts: {
                 <li>Un <strong>générateur IA</strong> pour tes services ComeUp / Fiverr / Upwork</li>
                 <li>Une <strong>recherche de prospects</strong> ciblée par ville + secteur</li>
               </ul>
-              <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#333;">
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#333;">
                 J'ai pré-chargé ton compte avec <strong style="color:#E87A34;">${opts.credits} crédits</strong> pour que tu puisses tester les générations IA et la recherche de prospects sans attendre.
               </p>
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0;">
+
+              <!-- Identifiants -->
+              <div style="margin:20px 0;padding:18px 20px;background:#fafafa;border:1px solid #ececec;border-radius:10px;">
+                <p style="margin:0 0 12px 0;font-size:13px;font-weight:600;color:#1a1a1a;letter-spacing:0.3px;text-transform:uppercase;">Tes identifiants</p>
+                <p style="margin:0 0 8px 0;font-size:14px;color:#333;">
+                  <span style="color:#888;display:inline-block;width:90px;">Email :</span>
+                  <strong style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#1a1a1a;">${opts.email}</strong>
+                </p>
+                <p style="margin:0;font-size:14px;color:#333;">
+                  <span style="color:#888;display:inline-block;width:90px;">Mot de passe :</span>
+                  <strong style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#E87A34;letter-spacing:0.5px;">${opts.tempPassword}</strong>
+                </p>
+              </div>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 12px 0;">
                 <tr>
                   <td style="border-radius:8px;background:#E87A34;">
-                    <a href="${opts.magicLink}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
-                      Accéder à mon compte →
+                    <a href="${opts.loginUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                      Me connecter à TopCloz →
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 6px 0;font-size:13px;line-height:1.6;color:#666;">
-                Ce lien magique te connecte directement, sans mot de passe. Il expire dans 24h.
+              <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#666;">
+                Dès ta première connexion, on te demandera de choisir ton propre mot de passe.
               </p>
-              <p style="margin:0 0 24px 0;font-size:13px;line-height:1.6;color:#666;">
-                Si le bouton ne marche pas, copie ce lien dans ton navigateur :<br>
-                <span style="color:#E87A34;word-break:break-all;">${opts.magicLink}</span>
-              </p>
+
               <p style="margin:24px 0 0 0;font-size:14px;line-height:1.6;color:#444;">
                 Dis-moi ce que tu en penses, j'écoute tous les retours.
               </p>
@@ -172,12 +196,18 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 2. Crée l'user Auth (si pas déjà créé). admin.auth.admin.createUser renvoie
-  //    une erreur si l'email existe déjà → on fallback sur listUsers pour récupérer l'id.
+  // 2. Crée OU récupère l'user Auth, puis (re)pose un mot de passe temporaire.
+  // Changement d'approche : plus de magic link à usage unique (expire à 1h,
+  // consommé par les prefetch Gmail → beaucoup d'échecs). On envoie un mot
+  // de passe temporaire que l'invité devra changer à sa 1re connexion.
+  const tempPassword = generateTempPassword()
   let userId: string | null = invite.user_id ?? null
+
   if (!userId) {
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email, email_confirm: true,
+      email,
+      email_confirm: true,
+      password: tempPassword,
       user_metadata: {
         needs_password_setup: true,
         ...(firstName ? { first_name: firstName } : {}),
@@ -193,17 +223,21 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 3. Magic link (expire par défaut à 1h côté Supabase, suffisant)
-  const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-    type: "magiclink", email,
-    options: { redirectTo: `${SITE_URL}/dashboard` },
-  })
-  if (linkErr || !linkData?.properties?.action_link) {
-    return json({ error: `Lien magique: ${linkErr?.message ?? "inconnu"}` }, 500)
+  // Pour un renvoi (ou si le user existait déjà), on repose le mot de passe
+  // temporaire pour qu'il corresponde à celui qu'on va envoyer dans l'email.
+  if (userId) {
+    const { error: updErr } = await admin.auth.admin.updateUserById(userId, {
+      password: tempPassword,
+      user_metadata: {
+        needs_password_setup: true,
+        ...(firstName ? { first_name: firstName } : {}),
+      },
+    })
+    if (updErr) return json({ error: `Auth update: ${updErr.message}` }, 500)
   }
-  const magicLink = linkData.properties.action_link
 
-  // 4. Envoi via Resend
+  // 3. Envoi via Resend (mot de passe temporaire + lien vers /login)
+  const loginUrl = `${SITE_URL}/login`
   const resendRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
@@ -211,7 +245,7 @@ Deno.serve(async (req) => {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: [email],
       subject: isResend ? "Rappel — ton accès TopCloz est prêt" : "Ton accès à TopCloz est prêt 🎉",
-      html: buildEmailHtml({ firstName, magicLink, credits }),
+      html: buildEmailHtml({ firstName, loginUrl, email, tempPassword, credits }),
       reply_to: FROM_EMAIL,
     }),
   })
