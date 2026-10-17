@@ -22,9 +22,6 @@ export function AuthLayout() {
           <h1 className="text-2xl font-bold tracking-tight text-ink-900">
             TopCloz
           </h1>
-          <p className="mt-2 text-sm text-ink-500">
-            Envoie un lien, pas un CV. Suis tes prospects, pas ta mémoire.
-          </p>
         </div>
         <div className="card">
           <Outlet />
